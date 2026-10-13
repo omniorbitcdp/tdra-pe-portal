@@ -132,11 +132,23 @@ git push -u origin main
 If you already ran `schema.sql`, apply the incremental migration instead of re-running the whole schema:
 
 ```
-supabase/migrations/2026-10-13_v1.1_ref_codes_indexes.sql
+supabase/migrations/2026-10-13_v1.2_random_ref_codes.sql
 ```
 
-It is idempotent and adds: **PE / Header / Template / URL reference codes** (`PE-000001`, `HDR-000001`,
-`TPL-000001`, `URL-000001`) with a trigger that assigns them on every insert and backfills existing rows;
+This single migration covers everything: reference codes (including converting any sequential codes from
+v1.1), the performance indexes, and the two settings. Run it once.
+
+It is self-contained and adds **random reference codes**, one length per module, assigned by a trigger on
+every insert (existing rows are re-drawn at the new length):
+
+| Module | Format | Example |
+|---|---|---|
+| Principal Entity | `PE-` + 8 digits | `PE-48291376` |
+| Header | `HDR-` + 6 digits | `HDR-731044` |
+| Template | `TPL-` + 7 digits | `TPL-2098841` |
+| URL | `URL-` + 5 digits | `URL-55612` |
+
+It also adds the performance indexes and the `require_activation` / `email_notifications_enabled` settings;
 performance indexes; and the `require_activation` / `email_notifications_enabled` settings.
 A fresh install gets all of this directly from `schema.sql`.
 

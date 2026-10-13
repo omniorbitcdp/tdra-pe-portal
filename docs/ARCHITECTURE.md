@@ -88,3 +88,30 @@ operator sees it in the queue and the split-screen review. Codes are backfilled 
   and any `link` / `otp` / `token` template variables before they are returned or persisted.
 - Added sliding-window **rate limiting** on `login` (15 / 5 min), `register` (10 / hour) and
   `forgot` (5 / 15 min) per client IP (§11). In-memory, so pair it with a WAF/edge limit in production.
+
+## v1.2 — Random reference codes (one length per module)
+
+Codes are not sequential. `allocate_ref_code(prefix, table, column, digits)` draws a random value inside the
+exact N-digit range (`10^(N-1) .. 10^N-1`, so never a shorter number and never a leading zero) and retries
+until the code is unused:
+
+| Module | Format | Range | Space |
+|---|---|---|---|
+| PE | `PE-48291376` | 10,000,000–99,999,999 | 90,000,000 |
+| Header | `HDR-731044` | 100,000–999,999 | 900,000 |
+| Template | `TPL-2098841` | 1,000,000–9,999,999 | 9,000,000 |
+| URL | `URL-55612` | 10,000–99,999 | 90,000 |
+
+**Collision safety.** Allocation takes a transaction-scoped advisory lock
+(`pg_advisory_xact_lock(hashtext('refcode:' || table))`), so two concurrent inserts can never receive the
+same code; a partial unique index on each code column is the second line of defence. After 50 failed draws
+the allocator raises rather than looping forever.
+
+**Capacity note.** The tightest space is URL (90,000) and Header (900,000). Collisions are handled by
+retry, so cost stays negligible until a type is a few percent full — at 1,000 URLs (~1.1% full) a draw
+collides ~1.1% of the time; at 9,000 URLs it retries about 1.1 times on average. The allocator raises
+rather than looping once it cannot find a free code within 100 tries, which is the signal to widen the
+format. For this portal's expected volume none of these bounds is remotely near.
+
+The v1.1 sequences are dropped by the v1.2 migration. Code assignment still happens in a `BEFORE INSERT`
+trigger, so application code is unchanged — it merely displays whatever code the database assigned.

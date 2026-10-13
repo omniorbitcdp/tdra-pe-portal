@@ -50,6 +50,8 @@ export default function KycReview() {
   if (!data) return <Loader />;
   const e = data.entity;
   const byType = new Map(data.documents.map((d) => [d.doc_type, d]));
+  // DRAFT / CLARIFICATION_REQUIRED / REJECTED means the PE has not (re)submitted.
+  const notSubmitted = ['DRAFT', 'CLARIFICATION_REQUIRED', 'REJECTED'].includes(String(e.kyc_status));
 
   return (
     <div>
@@ -93,11 +95,18 @@ export default function KycReview() {
             <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Decision</h2>
             <textarea className="input min-h-[70px]" placeholder="Remarks (required for rejection / correction)" value={remarks.KYC ?? ''} onChange={(ev) => setRemarks({ ...remarks, KYC: ev.target.value })} />
             <div className="mt-3 flex flex-wrap gap-2">
-              <button className="btn-success" disabled={busy || !data.packComplete || !e.kyc_info_approved} onClick={() => decide('APPROVE')}>Approve KYC</button>
-              <button className="btn-ghost" disabled={busy} onClick={() => decide('REQUEST_CORRECTION')}>Request correction</button>
-              <button className="btn-danger" disabled={busy} onClick={() => decide('REJECT')}>Reject</button>
+              <button className="btn-success" disabled={busy || !data.packComplete || !e.kyc_info_approved || notSubmitted} onClick={() => decide('APPROVE')}>Approve KYC</button>
+              <button className="btn-ghost" disabled={busy || notSubmitted} onClick={() => decide('REQUEST_CORRECTION')}>Request correction</button>
+              <button className="btn-danger" disabled={busy || notSubmitted} onClick={() => decide('REJECT')}>Reject</button>
             </div>
-            {(!data.packComplete || !e.kyc_info_approved) && <p className="mt-2 text-xs text-amber-700">Approval is blocked until all four documents are verified and the PE information is approved.</p>}
+            {notSubmitted && (
+              <p className="mt-2 text-xs text-amber-700">
+                <strong>Not submitted yet.</strong> This pack is in status <strong>{String(e.kyc_status).replace(/_/g, ' ')}</strong>. It moves to
+                <strong> Submitted</strong> only when the Principal Entity presses <strong>Submit KYC for review</strong> on their
+                <code className="mx-1 rounded bg-amber-100 px-1">/pe/kyc</code> page — an unsubmitted pack cannot be approved, rejected or returned.
+              </p>
+            )}
+            {!notSubmitted && (!data.packComplete || !e.kyc_info_approved) && <p className="mt-2 text-xs text-amber-700">Approval is blocked until all four documents are verified and the PE information is approved.</p>}
           </Card>
         </div>
 
