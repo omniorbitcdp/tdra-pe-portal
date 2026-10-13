@@ -10,9 +10,6 @@ export interface PlatformSettings {
   maxKycFileMb: number;
   allowedKycMime: string[];
   retentionDays: Record<string, number>;
-  /** When false (default) self-registered PEs are usable immediately — no mail
-   *  provider is required. Turn on to require the emailed activation link. */
-  requireActivation: boolean;
   emailNotificationsEnabled: boolean;
 }
 
@@ -24,7 +21,6 @@ export const DEFAULT_SETTINGS: PlatformSettings = {
   maxKycFileMb: DEFAULT_MAX_KYC_FILE_MB,
   allowedKycMime: [...KYC_ALLOWED_MIME],
   retentionDays: { pe_profile: 2555, kyc_documents: 2555, audit_log: 2555, notification_log: 365 },
-  requireActivation: false,
   emailNotificationsEnabled: true,
 };
 
@@ -58,7 +54,6 @@ export async function getSettings(): Promise<PlatformSettings> {
       maxKycFileMb: val('max_kyc_file_mb', DEFAULT_SETTINGS.maxKycFileMb),
       allowedKycMime: val('allowed_kyc_mime', DEFAULT_SETTINGS.allowedKycMime),
       retentionDays: val('retention_days', DEFAULT_SETTINGS.retentionDays),
-      requireActivation: val('require_activation', DEFAULT_SETTINGS.requireActivation),
       emailNotificationsEnabled: val('email_notifications_enabled', DEFAULT_SETTINGS.emailNotificationsEnabled),
     };
     cached = { value, at: Date.now() };

@@ -16,7 +16,7 @@ with role-separated telecom-operator approval queues, a split-screen KYC review,
 |---|---|
 | Login records in the app DB (not an email service) — §3 | `app_users` table, `src/lib/auth.ts`, `src/app/api/auth/[action]` |
 | Strong salted password hashes — §3, §11 | `src/lib/password.ts` (bcrypt, cost 10) |
-| Activation / reset via time-limited links + OTP — §3, §10 | `auth_tokens`, `/activate`, `/reset`, `sendNotification()` |
+| Password reset via time-limited links + OTP — §3, §10 (no email activation) | `auth_tokens`, `/reset`, `sendNotification()` |
 | PE registration form fields (§4.1 + §4.2) | `src/app/pe/profile`, `entityDetailsSchema` |
 | Four mandatory KYC documents, each verified independently — §5 | `kyc_documents`, `/pe/kyc`, split-screen `/operator/kyc/[entityId]` |
 | Sequence enforcement **in UI and backend** — §6, §12 | `src/lib/workflow.ts` + Postgres triggers (`enforce_sequence`) |
@@ -132,7 +132,8 @@ git push -u origin main
 If you already ran `schema.sql`, apply the incremental migration instead of re-running the whole schema:
 
 ```
-supabase/migrations/2026-10-13_v1.2_random_ref_codes.sql
+supabase/migrations/2026-10-13_v1.2_random_ref_codes.sql   (random reference IDs + indexes)
+supabase/migrations/2026-10-13_v1.3_remove_activation.sql   (removes the email-activation flow)
 ```
 
 This single migration covers everything: reference codes (including converting any sequential codes from
@@ -189,7 +190,7 @@ KYC approval is additionally blocked until **all four documents are `VERIFIED`**
 
 | Method & path | Purpose |
 |---|---|
-| `POST /api/auth/register` · `login` · `logout` · `activate` · `reset` · `forgot` | Account + session lifecycle |
+| `POST /api/auth/register` · `login` · `logout` · `reset` · `forgot` | Account + session lifecycle (registration is active immediately) |
 | `GET  /api/auth/me` | Current session |
 | `GET/PUT /api/pe/profile` | Entity & signatory details |
 | `GET/POST /api/pe/kyc` · `GET /api/pe/kyc/file?docId=` | KYC upload (validated) + signed preview |
@@ -247,7 +248,8 @@ Applied through `platform_settings` and injected as a CSS variable in the root l
 - RLS **enabled (deny-all)** on all tables; the app reaches the DB only from server code with the service-role key.
 - KYC documents live in a **private** storage bucket; access only through short-lived signed URLs (5 min), scoped by role/entity.
 - Full **audit trail** of logins, uploads, document verification, approvals/rejections and status changes.
-- No plain-text passwords are ever emailed; activation/reset uses time-limited tokens (store hashes only).
+- No plain-text passwords are ever emailed. **There is no email-activation step** — registration is
+  immediately usable with email + password; password *reset* uses time-limited tokens (hashes only).
 - Retention periods are **configurable** (`retention_days`) rather than hard-coded.
 
 ---
@@ -299,7 +301,7 @@ These follow the document's "proposed decisions" with a sensible default; confir
 | # | Criterion (§12) | Status |
 |---|---|---|
 | 1 | PE account stored in the app DB | ✅ |
-| 2 | Access comms sent via configured channels; no plain-text passwords | ✅ |
+| 2 | Access comms sent via configured channels; no plain-text passwords | ✅ (activation step removed by design) |
 | 3 | Form captures entity + signatory details | ✅ |
 | 4 | KYC pack requires all four documents | ✅ |
 | 5 | KYC Approver split-screen, per-document verification | ✅ |

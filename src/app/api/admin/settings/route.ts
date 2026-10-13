@@ -19,7 +19,7 @@ export async function PUT(req: NextRequest) {
   const g = guard(s, ['ADMIN']); if (g) return g;
   try {
     const body = await req.json().catch(() => ({}));
-    const allowed = ['operator_name', 'operator_short_name', 'logo_data_url', 'brand_color', 'max_kyc_file_mb', 'allowed_kyc_mime', 'retention_days', 'require_activation', 'email_notifications_enabled'];
+    const allowed = ['operator_name', 'operator_short_name', 'logo_data_url', 'brand_color', 'max_kyc_file_mb', 'allowed_kyc_mime', 'retention_days', 'email_notifications_enabled'];
     const client = db();
     for (const key of allowed) {
       if (key in body) {

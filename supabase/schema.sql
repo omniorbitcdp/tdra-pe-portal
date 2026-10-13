@@ -44,8 +44,10 @@ create table if not exists app_users (
   role                  text not null check (role in (
                           'PE','OPERATOR_KYC','OPERATOR_HEADER','OPERATOR_TEMPLATE_URL','ADMIN')),
   entity_id             uuid,                             -- set for PE users only
-  status                text not null default 'PENDING_ACTIVATION'
-                          check (status in ('PENDING_ACTIVATION','ACTIVE','LOCKED','DISABLED')),
+  -- Account status. Registration activates the account immediately (email +
+  -- password is sufficient — there is no email-activation step).
+  status                text not null default 'ACTIVE'
+                          check (status in ('ACTIVE','LOCKED','DISABLED')),
   failed_login_attempts int  not null default 0,
   locked_until          timestamptz,
   last_login_at         timestamptz,
@@ -321,13 +323,13 @@ create trigger trg_provider_updated before update on api_providers
   for each row execute function set_updated_at();
 
 -- ===========================================================================
--- 12. ACTIVATION / RESET TOKENS  (time-limited links & OTPs — §3, never
---     send plain-text passwords)
+-- 12. PASSWORD-RESET / VERIFY TOKENS  (time-limited links & OTPs — §3, never
+--     send plain-text passwords; not used for signup activation)
 -- ===========================================================================
 create table if not exists auth_tokens (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references app_users(id) on delete cascade,
-  purpose     text not null check (purpose in ('ACTIVATION','PASSWORD_RESET','OTP_VERIFY')),
+  purpose     text not null check (purpose in ('PASSWORD_RESET','OTP_VERIFY')),
   token_hash  text not null,             -- sha256 of the token (raw token only sent to user)
   otp_code    text,                      -- short numeric code (hashed compare optional)
   expires_at  timestamptz not null,

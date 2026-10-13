@@ -115,3 +115,19 @@ format. For this portal's expected volume none of these bounds is remotely near.
 
 The v1.1 sequences are dropped by the v1.2 migration. Code assignment still happens in a `BEFORE INSERT`
 trigger, so application code is unchanged — it merely displays whatever code the database assigned.
+
+## v1.3 — Email activation removed
+
+Registration no longer parks an account in `PENDING_ACTIVATION`. `POST /api/auth/register` creates the user
+as `ACTIVE` with the password already set, so **email + password alone are sufficient to sign in**.
+
+Removed: the `/activate` page, the `activate` action in `/api/auth/[action]`, the `ACTIVATION` token purpose,
+the activation email, the `require_activation` setting, and `PENDING_ACTIVATION` as a valid account status
+(constraint narrowed to `ACTIVE | LOCKED | DISABLED`).
+
+Retained: `POST /api/auth/forgot` + `/reset` — password *recovery* is still required by §3/§12 and uses the
+same time-limited, hashed token mechanism. It is unaffected by this change and simply logs `SKIPPED` when no
+email provider is configured.
+
+Backward compatibility: any pre-existing row still in `PENDING_ACTIVATION` is flipped to `ACTIVE` by the
+migration, and the login handler also activates such a row on the first successful password match.

@@ -7,7 +7,6 @@ import { setSessionCookie, clearSessionCookie, getSession, homeForRole } from '@
 import { loginSchema, registerSchema } from '@/lib/validation';
 import { logAudit } from '@/lib/audit';
 import { sendNotification } from '@/lib/notify';
-import { getSettings } from '@/lib/settings';
 import { rateLimit, clientIp } from '@/lib/rateLimit';
 import type { AppUser } from '@/lib/types';
 
@@ -46,43 +45,21 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       const { data: existing } = await db().from('app_users').select('id').eq('email', email).maybeSingle();
       if (existing) return badRequest('An account with this email already exists.');
 
-      const settings = await getSettings();
+      // No email-activation step: the account is ACTIVE as soon as it is created,
+      // so email + password alone are enough to sign in.
       const password_hash = await hashPassword(password);
+      const now = new Date().toISOString();
       const { data: user, error } = await db()
         .from('app_users')
         .insert({
           email, password_hash, full_name, phone, role: 'PE',
-          // When no mail provider is configured (default) the account is usable
-          // immediately; with activation required the user must use the link.
-          status: settings.requireActivation ? 'PENDING_ACTIVATION' : 'ACTIVE',
-          password_changed_at: settings.requireActivation ? null : new Date().toISOString(),
+          status: 'ACTIVE', password_changed_at: now,
         })
         .select('*').single();
       if (error) return badRequest(error.message);
 
-      let link: string | undefined;
-      if (settings.requireActivation && settings.emailNotificationsEnabled) {
-        const raw = randomToken(32);
-        await db().from('auth_tokens').insert({
-          user_id: user.id, purpose: 'ACTIVATION', token_hash: sha256Hex(raw),
-          otp_code: generateOtp(6), expires_at: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-        });
-        const base = process.env.APP_BASE_URL ?? 'http://localhost:3000';
-        link = `${base}/activate?token=${raw}&email=${encodeURIComponent(email)}`;
-        await sendNotification({
-          event: 'ACCOUNT_ACTIVATION', channel: 'EMAIL', recipient: email,
-          vars: { recipient: email, subject: 'Activate your TDRA PE portal account', body: `Welcome ${full_name}. Activate your account: ${link}`, link, name: full_name },
-        }).catch(() => undefined);
-      }
-
-      await logAudit({ entity_id: null, module: 'ACCOUNT', record_id: user.id, action: 'CREATE', actor_id: user.id, actor_email: email, actor_role: 'PE', from_status: null, to_status: user.status, remarks: 'Self-registration' });
-      return json({
-        ok: true,
-        message: settings.requireActivation
-          ? 'Account created. Check your email for the activation link.'
-          : 'Account created. You can sign in now.',
-        activation_link: process.env.NODE_ENV === 'production' ? undefined : link,
-      });
+      await logAudit({ entity_id: null, module: 'ACCOUNT', record_id: user.id, action: 'CREATE', actor_id: user.id, actor_email: email, actor_role: 'PE', from_status: null, to_status: 'ACTIVE', remarks: 'Self-registration' });
+      return json({ ok: true, message: 'Account created. You can sign in now with your email and password.' });
     }
 
     if (action === 'login') {
@@ -111,11 +88,16 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
         return unauthorized('Invalid email or password.');
       }
 
-      if (user.status === 'PENDING_ACTIVATION') {
-        return json({ ok: false, error: 'Please activate your account using the link sent to your email.' }, 403);
-      }
+      // A legacy PENDING_ACTIVATION row (from the retired activation flow) is
+      // simply activated on first valid login. Compared as a string because the
+      // status is no longer part of the AccountStatus union.
+      const legacyPending = (user.status as string) === 'PENDING_ACTIVATION';
+      const activateLegacy = legacyPending;
+      await db().from('app_users').update({
+        failed_login_attempts: 0, locked_until: null, last_login_at: new Date().toISOString(),
+        ...(activateLegacy ? { status: 'ACTIVE' } : {}),
+      }).eq('id', user.id);
 
-      await db().from('app_users').update({ failed_login_attempts: 0, locked_until: null, last_login_at: new Date().toISOString() }).eq('id', user.id);
       await setSessionCookie({ uid: user.id, email: user.email, role: user.role, entityId: user.entity_id, name: user.full_name ?? undefined });
       await logAudit({ entity_id: user.entity_id, module: 'AUTH', record_id: user.id, action: 'LOGIN', actor_id: user.id, actor_email: user.email, actor_role: user.role, from_status: null, to_status: null, remarks: null });
       return json({ ok: true, role: user.role, redirect: homeForRole(user.role) });
@@ -128,7 +110,8 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       return json({ ok: true });
     }
 
-    if (action === 'activate' || action === 'reset') {
+    // Password reset only — there is no activation action.
+    if (action === 'reset') {
       const body = await req.json().catch(() => ({}));
       const token = String(body.token ?? '');
       const password = String(body.password ?? '');
@@ -136,8 +119,8 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       const policy = passwordPolicyErrors(password);
       if (policy.length) return badRequest('Password does not meet policy', { errors: { password: policy.join('. ') } });
 
-      const purpose = action === 'activate' ? 'ACTIVATION' : 'PASSWORD_RESET';
-      const { data: rows } = await db().from('auth_tokens').select('*').eq('token_hash', sha256Hex(token)).eq('purpose', purpose).is('used_at', null).limit(1);
+      const { data: rows } = await db().from('auth_tokens').select('*')
+        .eq('token_hash', sha256Hex(token)).eq('purpose', 'PASSWORD_RESET').is('used_at', null).limit(1);
       const row = rows?.[0];
       if (!row) return badRequest('This link is invalid or has already been used.');
       if (new Date(row.expires_at) < new Date()) return badRequest('This link has expired. Please request a new one.');
@@ -146,7 +129,7 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       await db().from('app_users').update({ password_hash, status: 'ACTIVE', password_changed_at: new Date().toISOString(), failed_login_attempts: 0, locked_until: null }).eq('id', row.user_id);
       await db().from('auth_tokens').update({ used_at: new Date().toISOString() }).eq('id', row.id);
       const { data: user } = await db().from('app_users').select('*').eq('id', row.user_id).maybeSingle<AppUser>();
-      if (user) await logAudit({ entity_id: user.entity_id, module: 'ACCOUNT', record_id: user.id, action: action === 'activate' ? 'ACTIVATE' : 'PASSWORD_RESET', actor_id: user.id, actor_email: user.email, actor_role: user.role, from_status: null, to_status: 'ACTIVE', remarks: null });
+      if (user) await logAudit({ entity_id: user.entity_id, module: 'ACCOUNT', record_id: user.id, action: 'PASSWORD_RESET', actor_id: user.id, actor_email: user.email, actor_role: user.role, from_status: null, to_status: 'ACTIVE', remarks: null });
       return json({ ok: true, message: 'Your password has been set. You can now sign in.' });
     }
 

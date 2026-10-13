@@ -57,7 +57,8 @@ export const DOC_TYPE_LABELS: Record<DocType, string> = {
   VAT_CERTIFICATE: 'VAT Certificate',
 };
 
-export const ACCOUNT_STATUSES = ['PENDING_ACTIVATION', 'ACTIVE', 'LOCKED', 'DISABLED'] as const;
+// Registration activates an account immediately — there is no PENDING_ACTIVATION state.
+export const ACCOUNT_STATUSES = ['ACTIVE', 'LOCKED', 'DISABLED'] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
 export const UAE_EMIRATES = [
