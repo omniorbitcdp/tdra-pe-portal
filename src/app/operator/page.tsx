@@ -1,32 +1,87 @@
-import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/auth';
-import { Shell } from '@/components/Shell';
-import { PageHeader, Card } from '@/components/ui';
-import { ROLE_LABELS } from '@/lib/constants';
+'use client';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/client';
+import { Card, StatCard, StatGrid, SectionTitle, Empty, Avatar } from '@/components/ui';
+import { Loader, ErrorBox, Notice } from '@/components/nav';
+import { ROLE_LABELS, type Role } from '@/lib/constants';
 
-export const dynamic = 'force-dynamic';
+interface ModuleSummary { module: string; label: string; href: string; pending: number; awaitingPe: number; approved: number; rejected: number; draft: number; total: number }
+interface Recent { id: number; module: string; action: string; remarks: string | null; actor_name: string | null; actor_email: string | null; actor_role: string | null; created_at: string; to_status: string | null }
+interface Data { role: Role; modules: ModuleSummary[]; mine: { approved: number; rejected: number; correction: number; total: number }; recent: Recent[] }
 
-export default async function OperatorHome() {
-  const session = await getSession();
-  if (!session) redirect('/login');
-  const links = [
-    { href: '/operator/kyc', title: 'KYC Queue', desc: 'Split-screen review of PE details and the four mandatory TDRA documents.' },
-    { href: '/operator/headers', title: 'Header Queue', desc: 'Approve, reject or return header registration requests.' },
-    { href: '/operator/templates', title: 'Template Queue', desc: 'Review template registrations submitted against approved headers.' },
-    { href: '/operator/urls', title: 'URL Queue', desc: 'Review URL registrations submitted against approved templates.' },
-  ];
+export default function OperatorWorkbench() {
+  const [data, setData] = useState<Data | null>(null);
+  const [error, setError] = useState('');
+  useEffect(() => { api<Data>('/api/operator/summary').then((r) => { if (!r.ok) setError(r.data.error); else setData(r.data as unknown as Data); }); }, []);
+
+  if (error) return <ErrorBox message={error} />;
+  if (!data) return <Loader />;
+
+  const multi = data.modules.length > 1;
+
   return (
-    <Shell>
-      <PageHeader title="Telecom Operator Back Office" subtitle={ROLE_LABELS[session.role]} />
-      <div className="grid gap-4 md:grid-cols-2">
-        {links.map((l) => (
-          <a key={l.href} href={l.href} className="card p-5 transition hover:shadow-md">
-            <div className="text-base font-semibold brand-text">{l.title}</div>
-            <p className="mt-1 text-sm text-slate-600">{l.desc}</p>
-          </a>
-        ))}
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Approval Workbench</h1>
+        <p className="mt-1 text-sm text-slate-500">{ROLE_LABELS[data.role]} — you can only see and action the queue{multi ? 's' : ''} assigned to your role.</p>
       </div>
-      <p className="mt-6 text-xs text-slate-500">Role separation is enforced server-side: you can only action queues permitted by your role.</p>
-    </Shell>
+      <Notice />
+
+      {data.modules.map((m) => (
+        <div key={m.module} className="mb-7">
+          {multi && <SectionTitle>{m.label} registrations</SectionTitle>}
+          <StatGrid cols={5}>
+            <StatCard label="Awaiting my action" value={m.pending} tone="amber" href={m.href} active={m.pending > 0} />
+            <StatCard label="Awaiting PE" value={m.awaitingPe} tone="sky" />
+            <StatCard label="Approved" value={m.approved} tone="emerald" />
+            <StatCard label="Rejected" value={m.rejected} tone="rose" />
+            <StatCard label="Total" value={m.total} hint={m.draft ? `${m.draft} still in draft` : undefined} />
+          </StatGrid>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a className="btn-primary" href={m.href}>Open {m.label} queue{m.pending > 0 ? ` · ${m.pending} pending` : ''}</a>
+          </div>
+        </div>
+      ))}
+
+      <SectionTitle>My decisions</SectionTitle>
+      <StatGrid cols={4}>
+        <StatCard label="Approved by me" value={data.mine.approved} tone="emerald" />
+        <StatCard label="Rejected by me" value={data.mine.rejected} tone="rose" />
+        <StatCard label="Corrections requested" value={data.mine.correction} tone="amber" />
+        <StatCard label="Total actions" value={data.mine.total} />
+      </StatGrid>
+
+      <SectionTitle>Recent activity in my queue{multi ? 's' : ''}</SectionTitle>
+      <Card className="overflow-hidden p-0">
+        {data.recent.length === 0 ? <div className="p-5"><Empty>No activity yet.</Empty></div> : (
+          <table className="table">
+            <thead className="thead-row"><tr>
+              <th className="th">When</th><th className="th">Module</th><th className="th">Action</th>
+              <th className="th">By</th><th className="th">Result</th><th className="th">Remarks</th>
+            </tr></thead>
+            <tbody>
+              {data.recent.map((a) => (
+                <tr key={a.id} className="tr">
+                  <td className="td whitespace-nowrap text-xs text-slate-500">{new Date(a.created_at).toLocaleString()}</td>
+                  <td className="td">{a.module}</td>
+                  <td className="td font-medium">{a.action.replace(/_/g, ' ')}</td>
+                  <td className="td">
+                    <span className="flex items-center gap-2">
+                      <Avatar name={a.actor_name ?? a.actor_email ?? 'System'} size="sm" />
+                      <span className="min-w-0">
+                        <span className="block truncate text-xs font-semibold text-slate-700">{a.actor_name ?? a.actor_email ?? 'System'}</span>
+                        <span className="block truncate text-[10px] text-slate-400">{a.actor_role ?? ''}</span>
+                      </span>
+                    </span>
+                  </td>
+                  <td className="td text-xs">{a.to_status?.replace(/_/g, ' ') ?? '—'}</td>
+                  <td className="td max-w-[260px] text-xs text-slate-500">{a.remarks ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+    </div>
   );
 }

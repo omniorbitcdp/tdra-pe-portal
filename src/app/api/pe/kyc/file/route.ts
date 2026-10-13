@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     if (s!.role === 'PE' && doc.entity_id !== (await resolveEntityId(s))) return forbidden('Not your document.');
     const url = await signedKycUrl(doc.storage_path, 300);
     if (!url) return json({ ok: false, error: 'Could not sign document URL (check storage bucket/config).' }, 502);
-    await logAudit({ entity_id: doc.entity_id, module: 'DOCUMENT', record_id: doc.id, action: 'VIEW', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: null, remarks: doc.doc_type });
+    await logAudit({ entity_id: doc.entity_id, module: 'DOCUMENT', record_id: doc.id, action: 'VIEW', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: null, remarks: doc.doc_type });
     return json({ ok: true, url, expires_in: 300, document: doc });
   } catch (e) { return serverError(e); }
 }

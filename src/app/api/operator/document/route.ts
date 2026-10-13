@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       verified_at: status === 'VERIFIED' ? new Date().toISOString() : doc.verified_at,
     }).eq('id', docId).select('*').single();
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: doc.entity_id, module: 'DOCUMENT', record_id: docId, action: 'VERIFY_DOCUMENT', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: doc.status, to_status: status, remarks: remarks || doc.doc_type });
+    await logAudit({ entity_id: doc.entity_id, module: 'DOCUMENT', record_id: docId, action: 'VERIFY_DOCUMENT', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: doc.status, to_status: status, remarks: remarks || doc.doc_type });
     return json({ ok: true, document: updated });
   } catch (e) { return serverError(e); }
 }

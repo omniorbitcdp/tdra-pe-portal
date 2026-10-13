@@ -2,7 +2,7 @@
 // guard(), so access is enforced server-side (requirements §11, §12).
 import { cookies } from 'next/headers';
 import type { NextResponse } from 'next/server';
-import { SESSION_COOKIE, type Role } from './constants';
+import { HOME_FOR_ROLE, SESSION_COOKIE, type Role } from './constants';
 import { db } from './db';
 import { createSessionToken, verifySessionToken, type SessionPayload } from './session';
 import { forbidden, unauthorized } from './http';
@@ -60,9 +60,5 @@ export async function resolveEntityId(session: SessionPayload | null): Promise<s
 
 /** Landing route for a role after login. */
 export function homeForRole(role: Role): string {
-  switch (role) {
-    case 'PE': return '/pe';
-    case 'ADMIN': return '/admin';
-    default: return '/operator';
-  }
+  return HOME_FOR_ROLE[role] ?? '/login';
 }

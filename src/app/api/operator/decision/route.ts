@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
         if (!gate.ok) return json({ ok: false, error: gate.reason }, 409);
       }
       await db().from('entities').update({ kyc_status: to }).eq('id', id);
-      await logAudit({ entity_id: id, module: 'KYC', record_id: id, action, actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: entity.kyc_status, to_status: to, remarks: remarks || null });
+      await logAudit({ entity_id: id, module: 'KYC', record_id: id, action, actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: entity.kyc_status, to_status: to, remarks: remarks || null });
       await notify(module, action, entity.official_email ?? s!.email, remarks);
       return json({ ok: true, status: to });
     }
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await db().from(table).update({ status: to, remarks: remarks || record.remarks, decided_at: new Date().toISOString(), decided_by: s!.uid }).eq('id', id);
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: record.entity_id, module, record_id: id, action, actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: record.status, to_status: to, remarks: remarks || null });
+    await logAudit({ entity_id: record.entity_id, module, record_id: id, action, actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: record.status, to_status: to, remarks: remarks || null });
     const { data: entity } = await db().from('entities').select('official_email').eq('id', record.entity_id).maybeSingle();
     await notify(module, action, entity?.official_email ?? s!.email, remarks);
     return json({ ok: true, status: to });

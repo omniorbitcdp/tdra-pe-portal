@@ -58,7 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
         .select('*').single();
       if (error) return badRequest(error.message);
 
-      await logAudit({ entity_id: null, module: 'ACCOUNT', record_id: user.id, action: 'CREATE', actor_id: user.id, actor_email: email, actor_role: 'PE', from_status: null, to_status: 'ACTIVE', remarks: 'Self-registration' });
+      await logAudit({ entity_id: null, module: 'ACCOUNT', record_id: user.id, action: 'CREATE', actor_id: user.id, actor_name: full_name, actor_email: email, actor_role: 'PE', from_status: null, to_status: 'ACTIVE', remarks: 'Self-registration' });
       return json({ ok: true, message: 'Account created. You can sign in now with your email and password.' });
     }
 
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
         const patch: Record<string, unknown> = { failed_login_attempts: attempts };
         if (attempts >= MAX_ATTEMPTS) patch.locked_until = new Date(Date.now() + LOCK_MINUTES * 60000).toISOString();
         await db().from('app_users').update(patch).eq('id', user.id);
-        await logAudit({ entity_id: user.entity_id, module: 'AUTH', record_id: user.id, action: 'LOGIN_FAILED', actor_id: user.id, actor_email: email, actor_role: user.role, from_status: null, to_status: null, remarks: `Failed attempt ${attempts}` });
+        await logAudit({ entity_id: user.entity_id, module: 'AUTH', record_id: user.id, action: 'LOGIN_FAILED', actor_id: user.id, actor_name: user.full_name ?? null, actor_email: email, actor_role: user.role, from_status: null, to_status: null, remarks: `Failed attempt ${attempts}` });
         return unauthorized('Invalid email or password.');
       }
 
@@ -99,13 +99,13 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       }).eq('id', user.id);
 
       await setSessionCookie({ uid: user.id, email: user.email, role: user.role, entityId: user.entity_id, name: user.full_name ?? undefined });
-      await logAudit({ entity_id: user.entity_id, module: 'AUTH', record_id: user.id, action: 'LOGIN', actor_id: user.id, actor_email: user.email, actor_role: user.role, from_status: null, to_status: null, remarks: null });
+      await logAudit({ entity_id: user.entity_id, module: 'AUTH', record_id: user.id, action: 'LOGIN', actor_id: user.id, actor_name: user.full_name ?? null, actor_email: user.email, actor_role: user.role, from_status: null, to_status: null, remarks: null });
       return json({ ok: true, role: user.role, redirect: homeForRole(user.role) });
     }
 
     if (action === 'logout') {
       const s = await getSession();
-      if (s) await logAudit({ entity_id: s.entityId, module: 'AUTH', record_id: s.uid, action: 'LOGOUT', actor_id: s.uid, actor_email: s.email, actor_role: s.role, from_status: null, to_status: null, remarks: null });
+      if (s) await logAudit({ entity_id: s.entityId, module: 'AUTH', record_id: s.uid, action: 'LOGOUT', actor_id: s.uid, actor_email: s.email, actor_name: s.name ?? null, actor_role: s.role, from_status: null, to_status: null, remarks: null });
       clearSessionCookie();
       return json({ ok: true });
     }
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       await db().from('app_users').update({ password_hash, status: 'ACTIVE', password_changed_at: new Date().toISOString(), failed_login_attempts: 0, locked_until: null }).eq('id', row.user_id);
       await db().from('auth_tokens').update({ used_at: new Date().toISOString() }).eq('id', row.id);
       const { data: user } = await db().from('app_users').select('*').eq('id', row.user_id).maybeSingle<AppUser>();
-      if (user) await logAudit({ entity_id: user.entity_id, module: 'ACCOUNT', record_id: user.id, action: 'PASSWORD_RESET', actor_id: user.id, actor_email: user.email, actor_role: user.role, from_status: null, to_status: 'ACTIVE', remarks: null });
+      if (user) await logAudit({ entity_id: user.entity_id, module: 'ACCOUNT', record_id: user.id, action: 'PASSWORD_RESET', actor_id: user.id, actor_name: user.full_name ?? null, actor_email: user.email, actor_role: user.role, from_status: null, to_status: 'ACTIVE', remarks: null });
       return json({ ok: true, message: 'Your password has been set. You can now sign in.' });
     }
 

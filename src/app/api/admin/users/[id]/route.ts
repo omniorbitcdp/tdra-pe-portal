@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const { data: updated, error } = await db().from('app_users').update(patch).eq('id', params.id)
       .select('id,email,full_name,role,entity_id,status').single();
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: user.entity_id, module: 'ACCOUNT', record_id: user.id, action: 'ADMIN_UPDATE_USER', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: user.status, to_status: updated.status, remarks: Object.keys(patch).join(', ') });
+    await logAudit({ entity_id: user.entity_id, module: 'ACCOUNT', record_id: user.id, action: 'ADMIN_UPDATE_USER', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: user.status, to_status: updated.status, remarks: Object.keys(patch).join(', ') });
     return json({ ok: true, user: updated });
   } catch (e) { return serverError(e); }
 }

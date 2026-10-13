@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     if (['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED', 'CLARIFICATION_REQUIRED', 'REJECTED', 'DRAFT'].includes(entity?.kyc_status ?? 'DRAFT')) {
       await db().from('entities').update({ kyc_status: 'DRAFT' }).eq('id', entityId);
     }
-    await logAudit({ entity_id: entityId, module: 'DOCUMENT', record_id: res.data.id, action: existing ? 'REPLACE' : 'UPLOAD', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: existing ? 'REPLACED' : null, to_status: 'PENDING_VERIFICATION', remarks: docType });
+    await logAudit({ entity_id: entityId, module: 'DOCUMENT', record_id: res.data.id, action: existing ? 'REPLACE' : 'UPLOAD', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: existing ? 'REPLACED' : null, to_status: 'PENDING_VERIFICATION', remarks: docType });
     return json({ ok: true, document: res.data });
   } catch (e) { return serverError(e); }
 }

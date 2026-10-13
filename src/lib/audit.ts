@@ -1,4 +1,5 @@
 // Append-only audit trail (requirements §7.1, §11, §12).
+// Records WHO did it — actor id, name, email and role — plus the status change.
 import { db } from './db';
 import type { AuditEntry } from './types';
 
@@ -10,6 +11,7 @@ export async function logAudit(entry: AuditEntry): Promise<void> {
       record_id: entry.record_id,
       action: entry.action,
       actor_id: entry.actor_id,
+      actor_name: entry.actor_name ?? null,
       actor_email: entry.actor_email,
       actor_role: entry.actor_role,
       from_status: entry.from_status,

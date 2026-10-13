@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       role, entity_id: body.entity_id ?? null, status: 'ACTIVE', password_changed_at: new Date().toISOString(),
     }).select('id,email,full_name,role,entity_id,status,created_at').single();
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: created.entity_id, module: 'ACCOUNT', record_id: created.id, action: 'ADMIN_CREATE_USER', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: 'ACTIVE', remarks: role });
+    await logAudit({ entity_id: created.entity_id, module: 'ACCOUNT', record_id: created.id, action: 'ADMIN_CREATE_USER', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: 'ACTIVE', remarks: role });
     return json({ ok: true, user: created });
   } catch (e) { return serverError(e); }
 }

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await db().from('template_registrations')
       .insert({ ...parsed.data, entity_id: entityId, status: 'DRAFT', created_by: s!.uid }).select('*').single();
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: entityId, module: 'TEMPLATE', record_id: data.id, action: 'CREATE', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: 'DRAFT', remarks: `${data.template_code ?? ''} ${parsed.data.template_name}`.trim() });
+    await logAudit({ entity_id: entityId, module: 'TEMPLATE', record_id: data.id, action: 'CREATE', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: 'DRAFT', remarks: `${data.template_code ?? ''} ${parsed.data.template_name}`.trim() });
     return json({ ok: true, template: data });
   } catch (e) { return serverError(e); }
 }

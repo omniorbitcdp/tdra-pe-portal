@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     const code = (record.header_code ?? record.template_code ?? record.url_code ?? '') as string;
     const { data: updated, error } = await db().from(table).update({ status: to, submitted_at: new Date().toISOString() }).eq('id', id).select('*').single();
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: (await resolveEntityId(s)), module, record_id: id, action: 'SUBMIT', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: from, to_status: to, remarks: code || null });
+    await logAudit({ entity_id: (await resolveEntityId(s)), module, record_id: id, action: 'SUBMIT', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: from, to_status: to, remarks: code || null });
     await sendNotification({ event: `${module}_SUBMITTED`, channel: 'EMAIL', recipient: entity?.official_email ?? s!.email, vars: { recipient: entity?.official_email ?? s!.email, subject: `${module} request submitted`, body: `Your ${module.toLowerCase()} registration has been submitted and is pending review.` } }).catch(() => undefined);
     return json({ ok: true, record: updated });
   } catch (e) { return serverError(e); }

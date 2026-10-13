@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await db().from('header_registrations')
       .insert({ ...parsed.data, entity_id: entityId, status: 'DRAFT', created_by: s!.uid }).select('*').single();
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: entityId, module: 'HEADER', record_id: data.id, action: 'CREATE', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: 'DRAFT', remarks: `${data.header_code ?? ''} ${parsed.data.header_name}`.trim() });
+    await logAudit({ entity_id: entityId, module: 'HEADER', record_id: data.id, action: 'CREATE', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: 'DRAFT', remarks: `${data.header_code ?? ''} ${parsed.data.header_name}`.trim() });
     return json({ ok: true, header: data });
   } catch (e) { return serverError(e); }
 }

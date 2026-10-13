@@ -32,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     const { data, error } = await db().from('api_providers').update(values).eq('id', params.id).select('*').single();
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: null, module: 'API_CONFIG', record_id: params.id, action: 'UPDATE_PROVIDER', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: null, remarks: current.provider_name });
+    await logAudit({ entity_id: null, module: 'API_CONFIG', record_id: params.id, action: 'UPDATE_PROVIDER', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: null, remarks: current.provider_name });
     return json({ ok: true, provider: { ...data, auth_config: maskAuthConfig(data.auth_config) } });
   } catch (e) { return serverError(e); }
 }
@@ -44,6 +44,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!current) return notFound('Provider not found.');
   const { error } = await db().from('api_providers').delete().eq('id', params.id);
   if (error) return badRequest(error.message);
-  await logAudit({ entity_id: null, module: 'API_CONFIG', record_id: params.id, action: 'DELETE_PROVIDER', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: null, remarks: current.provider_name });
+  await logAudit({ entity_id: null, module: 'API_CONFIG', record_id: params.id, action: 'DELETE_PROVIDER', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: null, remarks: current.provider_name });
   return json({ ok: true });
 }

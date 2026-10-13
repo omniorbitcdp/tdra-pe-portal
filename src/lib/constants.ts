@@ -97,3 +97,22 @@ export const ABSOLUTE_MAX_KYC_FILE_MB = 10;
 export const KYC_ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'] as const;
 
 export const SESSION_COOKIE = 'tdra_session';
+
+/** Landing route per role. Kept here (not in lib/auth) so middleware can use it
+ *  without importing anything that touches next/headers. */
+export const HOME_FOR_ROLE: Record<Role, string> = {
+  PE: '/pe',
+  OPERATOR_KYC: '/operator',
+  OPERATOR_HEADER: '/operator',
+  OPERATOR_TEMPLATE_URL: '/operator',
+  ADMIN: '/admin',
+};
+
+/** Which approval queue a role owns. Drives role-scoped navigation & summaries. */
+export const MODULES_FOR_ROLE: Record<Role, ModuleKey[]> = {
+  PE: [],
+  OPERATOR_KYC: ['KYC'],
+  OPERATOR_HEADER: ['HEADER'],
+  OPERATOR_TEMPLATE_URL: ['TEMPLATE', 'URL'],
+  ADMIN: ['KYC', 'HEADER', 'TEMPLATE', 'URL'],
+};

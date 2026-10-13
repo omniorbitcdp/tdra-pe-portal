@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest) {
       }
     }
     invalidateSettingsCache();
-    await logAudit({ entity_id: null, module: 'ADMIN', record_id: null, action: 'UPDATE_SETTINGS', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: null, remarks: Object.keys(body).join(', ') });
+    await logAudit({ entity_id: null, module: 'ADMIN', record_id: null, action: 'UPDATE_SETTINGS', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: null, remarks: Object.keys(body).join(', ') });
     return json({ ok: true, settings: await getSettings() });
   } catch (e) { return serverError(e); }
 }

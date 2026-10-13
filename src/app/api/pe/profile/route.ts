@@ -40,14 +40,14 @@ export async function PUT(req: NextRequest) {
       // Re-issue the session so the new entityId is carried straight away —
       // otherwise the dashboard / KYC screens would still see a null entity.
       await setSessionCookie({ ...s!, entityId: created.id });
-      await logAudit({ entity_id: created.id, module: 'KYC', record_id: created.id, action: 'CREATE', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: 'DRAFT', remarks: 'Entity profile created' });
+      await logAudit({ entity_id: created.id, module: 'KYC', record_id: created.id, action: 'CREATE', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: 'DRAFT', remarks: 'Entity profile created' });
       return json({ ok: true, entity: created, entity_id: created.id });
     }
 
     const { data: updated, error } = await db()
       .from('entities').update(values).eq('id', entityId).select('*').single<Entity>();
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: entityId, module: 'KYC', record_id: entityId, action: 'UPDATE', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: null, remarks: 'Entity details updated' });
+    await logAudit({ entity_id: entityId, module: 'KYC', record_id: entityId, action: 'UPDATE', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: null, remarks: 'Entity details updated' });
     return json({ ok: true, entity: updated });
   } catch (e) { return serverError(e); }
 }

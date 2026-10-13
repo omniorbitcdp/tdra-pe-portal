@@ -18,6 +18,6 @@ export async function POST(req: NextRequest) {
   const { data: entity } = await db().from('entities').select('*').eq('id', entityId).maybeSingle();
   if (!entity) return notFound('Entity not found.');
   await db().from('entities').update({ kyc_info_approved: approve }).eq('id', entityId);
-  await logAudit({ entity_id: entityId, module: 'KYC', record_id: entityId, action: approve ? 'APPROVE_INFO' : 'REVOKE_INFO', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: String(entity.kyc_info_approved), to_status: String(approve), remarks: null });
+  await logAudit({ entity_id: entityId, module: 'KYC', record_id: entityId, action: approve ? 'APPROVE_INFO' : 'REVOKE_INFO', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: String(entity.kyc_info_approved), to_status: String(approve), remarks: null });
   return json({ ok: true, kyc_info_approved: approve });
 }

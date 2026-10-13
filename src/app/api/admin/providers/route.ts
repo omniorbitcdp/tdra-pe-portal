@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
     const { data, error } = await db().from('api_providers').insert(values).select('*').single();
     if (error) return badRequest(error.message);
-    await logAudit({ entity_id: null, module: 'API_CONFIG', record_id: data.id, action: 'CREATE_PROVIDER', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: null, remarks: `${values.channel}/${values.provider_name}` });
+    await logAudit({ entity_id: null, module: 'API_CONFIG', record_id: data.id, action: 'CREATE_PROVIDER', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: null, to_status: null, remarks: `${values.channel}/${values.provider_name}` });
     return json({ ok: true, provider: { ...data, auth_config: maskAuthConfig(data.auth_config) } });
   } catch (e) { return serverError(e); }
 }

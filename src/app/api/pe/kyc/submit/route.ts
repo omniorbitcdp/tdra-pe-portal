@@ -36,7 +36,7 @@ export async function POST() {
     const { error } = await db().from('entities').update({ kyc_status: to }).eq('id', entityId);
     if (error) return badRequest(error.message);
 
-    await logAudit({ entity_id: entityId, module: 'KYC', record_id: entityId, action: 'SUBMIT', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: from, to_status: to, remarks: `KYC pack submitted with ${(docs ?? []).length} document(s)` });
+    await logAudit({ entity_id: entityId, module: 'KYC', record_id: entityId, action: 'SUBMIT', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: from, to_status: to, remarks: `KYC pack submitted with ${(docs ?? []).length} document(s)` });
     await sendNotification({
       event: 'KYC_SUBMITTED', channel: 'EMAIL',
       recipient: entity.official_email ?? s!.email,

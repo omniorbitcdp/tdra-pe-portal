@@ -145,6 +145,7 @@ export interface AuditEntry {
   record_id: string | null;
   action: string;
   actor_id: string | null;
+  actor_name?: string | null;
   actor_email: string | null;
   actor_role: string | null;
   from_status: string | null;
