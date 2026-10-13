@@ -17,6 +17,22 @@ const BLANK: Provider = {
   auth_config: { token: '' }, timeout_ms: 15000, is_active: true, is_default: true,
 };
 
+const SECRET_KEYS = ['token', 'password', 'key_value'];
+const SECRET_MASK = '__SET__';
+/** Stored secrets come back masked; show a blank field instead of the mask. */
+function displayAuth(a: Record<string, string> | undefined): Record<string, string> {
+  const o = { ...(a ?? {}) };
+  for (const k of SECRET_KEYS) if (o[k] === SECRET_MASK) o[k] = '';
+  return o;
+}
+/** Blank secret on an existing provider means "keep the stored value". */
+function prepareAuthForSave(p: Provider): Record<string, string> {
+  const o = { ...(p.auth_config ?? {}) };
+  const wasSet = (k: string) => Boolean(p.id) && !o[k];
+  for (const k of SECRET_KEYS) if (wasSet(k)) o[k] = SECRET_MASK;
+  return o;
+}
+
 const SAMPLE_VARS = { recipient: '+971500000000', body: 'Test message from TDRA portal', subject: 'Test subject', sender_id: 'TDRA', link: 'https://example.com', name: 'Test User', otp: '123456' };
 
 export default function ApiConfigPage() {
@@ -31,11 +47,11 @@ export default function ApiConfigPage() {
   async function load() { const r = await api<{ providers: Provider[] }>('/api/admin/providers'); if (r.ok) setProviders((r.data as unknown as { providers: Provider[] }).providers ?? []); else setError(r.data.error); setLoaded(true); }
   useEffect(() => { load(); }, []);
 
-  function edit(p: Provider) { setDraft({ ...p, headers: p.headers ?? {}, query_params: p.query_params ?? {}, auth_config: p.auth_config ?? {} }); setResult(null); }
+  function edit(p: Provider) { setDraft({ ...p, headers: p.headers ?? {}, query_params: p.query_params ?? {}, auth_config: displayAuth(p.auth_config) }); setResult(null); }
 
   async function save() {
     setError(''); setNotice('');
-    const payload = { ...draft, query_params: draft.query_params ?? {} };
+    const payload = { ...draft, query_params: draft.query_params ?? {}, auth_config: prepareAuthForSave(draft) };
     const res = draft.id ? await api(`/api/admin/providers/${draft.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
                          : await api('/api/admin/providers', { method: 'POST', body: JSON.stringify(payload) });
     if (!res.ok) { setError(res.data.error ?? 'Save failed'); return; }
@@ -116,14 +132,14 @@ export default function ApiConfigPage() {
 
           {draft.auth_type !== 'NONE' && (
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {draft.auth_type === 'BEARER' && <div className="md:col-span-2"><label className="label">Bearer token</label><input className="input" value={draft.auth_config.token ?? ''} onChange={(e) => setDraft({ ...draft, auth_config: { ...draft.auth_config, token: e.target.value } })} /></div>}
+              {draft.auth_type === 'BEARER' && <div className="md:col-span-2"><label className="label">Bearer token</label><input className="input" placeholder="•••••• saved — leave blank to keep" value={draft.auth_config.token ?? ''} onChange={(e) => setDraft({ ...draft, auth_config: { ...draft.auth_config, token: e.target.value } })} /></div>}
               {draft.auth_type === 'BASIC' && <>
                 <div><label className="label">Username</label><input className="input" value={draft.auth_config.username ?? ''} onChange={(e) => setDraft({ ...draft, auth_config: { ...draft.auth_config, username: e.target.value } })} /></div>
                 <div><label className="label">Password</label><input className="input" type="password" value={draft.auth_config.password ?? ''} onChange={(e) => setDraft({ ...draft, auth_config: { ...draft.auth_config, password: e.target.value } })} /></div>
               </>}
               {draft.auth_type === 'API_KEY' && <>
                 <div><label className="label">Key name</label><input className="input" value={draft.auth_config.key_name ?? ''} onChange={(e) => setDraft({ ...draft, auth_config: { ...draft.auth_config, key_name: e.target.value } })} placeholder="X-Api-Key" /></div>
-                <div><label className="label">Key value</label><input className="input" value={draft.auth_config.key_value ?? ''} onChange={(e) => setDraft({ ...draft, auth_config: { ...draft.auth_config, key_value: e.target.value } })} /></div>
+                <div><label className="label">Key value</label><input className="input" placeholder="•••••• saved — leave blank to keep" value={draft.auth_config.key_value ?? ''} onChange={(e) => setDraft({ ...draft, auth_config: { ...draft.auth_config, key_value: e.target.value } })} /></div>
                 <div><label className="label">Send key in</label><select className="input" value={draft.auth_config.key_in ?? 'header'} onChange={(e) => setDraft({ ...draft, auth_config: { ...draft.auth_config, key_in: e.target.value } })}><option value="header">Header</option><option value="query">Query param</option></select></div>
               </>}
             </div>

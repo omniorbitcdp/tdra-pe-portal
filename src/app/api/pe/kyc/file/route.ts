@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { getSession, guard } from '@/lib/auth';
+import { getSession, guard, resolveEntityId } from '@/lib/auth';
 import { json, badRequest, notFound, serverError, forbidden } from '@/lib/http';
 import { signedKycUrl } from '@/lib/storage';
 import { logAudit } from '@/lib/audit';
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     if (!docId) return badRequest('docId is required.');
     const { data: doc } = await db().from('kyc_documents').select('*').eq('id', docId).maybeSingle();
     if (!doc) return notFound('Document not found.');
-    if (s!.role === 'PE' && doc.entity_id !== s!.entityId) return forbidden('Not your document.');
+    if (s!.role === 'PE' && doc.entity_id !== (await resolveEntityId(s))) return forbidden('Not your document.');
     const url = await signedKycUrl(doc.storage_path, 300);
     if (!url) return json({ ok: false, error: 'Could not sign document URL (check storage bucket/config).' }, 502);
     await logAudit({ entity_id: doc.entity_id, module: 'DOCUMENT', record_id: doc.id, action: 'VIEW', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: null, remarks: doc.doc_type });

@@ -39,10 +39,11 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
       <Card className="overflow-x-auto">
         {rows.length === 0 ? <Empty>Queue is empty.</Empty> : (
           <table className="w-full">
-            <thead><tr><th className="th">Entity</th><th className="th">Detail</th><th className="th">Status</th><th className="th">Remarks</th><th className="th">Action</th></tr></thead>
+            <thead><tr><th className="th">ID</th><th className="th">Entity</th><th className="th">Detail</th><th className="th">Status</th><th className="th">Remarks</th><th className="th">Action</th></tr></thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
+                  <td className="td font-mono text-xs">{String(r.header_code ?? r.template_code ?? r.url_code ?? "—")}</td>
                   <td className="td font-medium">{r.entity_name}</td>
                   <td className="td">
                     {module === 'HEADER' && <span>{String(r.header_name)} · {String(r.sender_id)}</span>}

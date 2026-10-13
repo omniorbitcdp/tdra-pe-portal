@@ -23,6 +23,8 @@ insert into platform_settings(key, value) values
   ('brand_color', '{"value":"#345dff"}'::jsonb),
   ('max_kyc_file_mb', '{"value":5}'::jsonb),
   ('allowed_kyc_mime', '{"value":["application/pdf","image/jpeg","image/jpg","image/png"]}'::jsonb),
+  ('require_activation', '{"value":false}'::jsonb),
+  ('email_notifications_enabled', '{"value":true}'::jsonb),
   ('retention_days', '{"value":{"pe_profile":2555,"kyc_documents":2555,"audit_log":2555,"notification_log":365}}'::jsonb)
 on conflict (key) do nothing;
 

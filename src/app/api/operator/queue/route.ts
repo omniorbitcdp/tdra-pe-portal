@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   const table = QUEUE_TABLE[module];
   const client = db();
-  const { data: rows } = await client.from(table).select('*').order('created_at', { ascending: false });
+  const { data: rows } = await client.from(table).select('*').order('created_at', { ascending: false }).limit(200);
   const list = rows ?? [];
 
   // Attach the entity name for display.

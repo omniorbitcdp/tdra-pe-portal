@@ -61,6 +61,10 @@ export default function ProfilePage() {
       <Notice message={notice} />
       <form onSubmit={submit} className="space-y-6">
         <Card>
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 px-4 py-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">PE ID</span>
+            <span className="font-mono text-sm font-bold brand-text">{form.entity_code || "assigned on first save"}</span>
+          </div>
           <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Entity and business details</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {F('Legal entity name *', 'legal_entity_name')}

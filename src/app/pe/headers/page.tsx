@@ -4,7 +4,7 @@ import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 
-interface Header { id: string; header_name: string; sender_id: string; header_type: string; status: string; remarks: string | null }
+interface Header { id: string; header_code: string | null; header_name: string; sender_id: string; header_type: string; status: string; remarks: string | null }
 
 export default function HeadersPage() {
   const [items, setItems] = useState<Header[]>([]);
@@ -45,13 +45,13 @@ export default function HeadersPage() {
       <Card className="overflow-x-auto">
         {items.length === 0 ? <Empty>No headers yet.</Empty> : (
           <table className="w-full">
-            <thead><tr><th className="th">Header</th><th className="th">Sender ID</th><th className="th">Type</th><th className="th">Status</th><th className="th">Remarks</th><th className="th"></th></tr></thead>
+            <thead><tr><th className="th">Header ID</th><th className="th">Header</th><th className="th">Sender ID</th><th className="th">Type</th><th className="th">Status</th><th className="th">Remarks</th><th className="th"></th></tr></thead>
             <tbody>
               {items.map((h) => (
                 <tr key={h.id}>
-                  <td className="td font-medium">{h.header_name}</td><td className="td">{h.sender_id}</td><td className="td">{h.header_type}</td>
+                  <td className="td font-mono text-xs">{h.header_code ?? "—"}</td><td className="td font-medium">{h.header_name}</td><td className="td">{h.sender_id}</td><td className="td">{h.header_type}</td>
                   <td className="td"><StatusPill status={h.status} /></td><td className="td">{h.remarks ?? '—'}</td>
-                  <td className="td">{(h.status === 'DRAFT' || h.status === 'CLARIFICATION_REQUIRED' || h.status === 'REJECTED') && <button className="btn-ghost" onClick={() => submit(h.id)}>Submit</button>}</td>
+                  <td className="td">{(h.status === 'DRAFT' || h.status === 'CLARIFICATION_REQUIRED' || h.status === 'REJECTED') && <button className="btn-ghost" onClick={() => submit(h.id)}>{h.status === 'DRAFT' ? 'Submit' : 'Resubmit'}</button>}</td>
                 </tr>
               ))}
             </tbody>

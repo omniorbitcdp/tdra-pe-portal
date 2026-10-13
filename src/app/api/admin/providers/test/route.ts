@@ -4,6 +4,7 @@ import { getSession, guard } from '@/lib/auth';
 import { json, badRequest, serverError, notFound } from '@/lib/http';
 import { executeRequest, type ProviderRequestConfig } from '@/lib/apiRequest';
 import { logAudit } from '@/lib/audit';
+import { redactRequestPreview } from '@/lib/redact';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
 
     const result = await executeRequest(config, vars);
     await logAudit({ entity_id: null, module: 'API_CONFIG', record_id: providerId, action: 'TEST_PROVIDER', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: String(result.status ?? 'ERR'), remarks: `${config.channel}:${config.provider_name} ${result.ok ? 'OK' : 'FAIL'} in ${result.timeMs}ms` });
-    return json({ ok: true, result });
+    // Never echo credential headers back to the browser or into the audit trail.
+    return json({ ok: true, result: { ...result, requestPreview: redactRequestPreview(result.requestPreview) } });
   } catch (e) { return serverError(e); }
 }

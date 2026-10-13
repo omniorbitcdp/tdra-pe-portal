@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { getSession, guard } from '@/lib/auth';
+import { getSession, guard, resolveEntityId } from '@/lib/auth';
 import { json } from '@/lib/http';
 import { MANDATORY_DOC_TYPES } from '@/lib/constants';
 
@@ -9,17 +9,18 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const s = await getSession();
   const g = guard(s, ['PE']); if (g) return g;
-  const entityId = s!.entityId;
+  const entityId = await resolveEntityId(s);
   if (!entityId) return json({ ok: true, entity: null, kyc: { status: 'NOT_STARTED', documents: [], complete: false }, headers: [], templates: [], urls: [], history: [] });
 
   const client = db();
   const [entity, docs, headers, templates, urls, history] = await Promise.all([
     client.from('entities').select('*').eq('id', entityId).maybeSingle(),
     client.from('kyc_documents').select('*').eq('entity_id', entityId),
-    client.from('header_registrations').select('*').eq('entity_id', entityId).order('created_at', { ascending: false }),
-    client.from('template_registrations').select('*').eq('entity_id', entityId).order('created_at', { ascending: false }),
-    client.from('url_registrations').select('*').eq('entity_id', entityId).order('created_at', { ascending: false }),
-    client.from('audit_log').select('*').eq('entity_id', entityId).order('created_at', { ascending: false }).limit(100),
+    client.from('header_registrations').select('*').eq('entity_id', entityId).order('created_at', { ascending: false }).limit(50),
+    client.from('template_registrations').select('*').eq('entity_id', entityId).order('created_at', { ascending: false }).limit(50),
+    client.from('url_registrations').select('*').eq('entity_id', entityId).order('created_at', { ascending: false }).limit(50),
+    client.from('audit_log').select('id,module,action,from_status,to_status,remarks,actor_email,created_at')
+      .eq('entity_id', entityId).order('created_at', { ascending: false }).limit(50),
   ]);
   const documents = docs.data ?? [];
   const verified = new Set(documents.filter((d: { status: string }) => d.status === 'VERIFIED').map((d: { doc_type: string }) => d.doc_type));

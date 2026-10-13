@@ -28,7 +28,7 @@ export default async function KycQueue() {
       <Card className="overflow-x-auto">
         {(entities ?? []).length === 0 ? <Empty>No entities submitted.</Empty> : (
           <table className="w-full">
-            <thead><tr><th className="th">Entity</th><th className="th">Type</th><th className="th">KYC status</th><th className="th">Docs verified</th><th className="th">Info approved</th><th className="th"></th></tr></thead>
+            <thead><tr><th className="th">PE ID</th><th className="th">Entity</th><th className="th">Type</th><th className="th">KYC status</th><th className="th">Docs verified</th><th className="th">Info approved</th><th className="th"></th></tr></thead>
             <tbody>
               {(entities ?? []).map((e) => {
                 const list = byEntity.get(e.id) ?? [];
@@ -36,7 +36,7 @@ export default async function KycQueue() {
                 const missing = MANDATORY_DOC_TYPES.filter((t) => !list.some((d) => d.doc_type === t));
                 return (
                   <tr key={e.id}>
-                    <td className="td font-medium">{e.legal_entity_name}</td>
+                    <td className="td font-mono text-xs">{e.entity_code ?? "—"}</td><td className="td font-medium">{e.legal_entity_name}</td>
                     <td className="td">{e.entity_type}</td>
                     <td className="td"><StatusPill status={e.kyc_status} /></td>
                     <td className="td">{verified} / 4 {missing.length > 0 && <span className="text-amber-700">· {missing.length} missing</span>}</td>

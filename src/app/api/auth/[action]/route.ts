@@ -3,11 +3,12 @@ import { db } from '@/lib/db';
 import { json, badRequest, serverError, unauthorized } from '@/lib/http';
 import { hashPassword, verifyPassword, passwordPolicyErrors } from '@/lib/password';
 import { generateOtp, randomToken, sha256Hex } from '@/lib/crypto';
-import { setSessionCookie, clearSessionCookie, getSession } from '@/lib/auth';
-import { homeForRole } from '@/lib/auth';
+import { setSessionCookie, clearSessionCookie, getSession, homeForRole } from '@/lib/auth';
 import { loginSchema, registerSchema } from '@/lib/validation';
 import { logAudit } from '@/lib/audit';
 import { sendNotification } from '@/lib/notify';
+import { getSettings } from '@/lib/settings';
+import { rateLimit, clientIp } from '@/lib/rateLimit';
 import type { AppUser } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -15,12 +16,26 @@ export const runtime = 'nodejs';
 
 const MAX_ATTEMPTS = Number(process.env.MAX_LOGIN_ATTEMPTS ?? '5');
 const LOCK_MINUTES = Number(process.env.LOCKOUT_MINUTES ?? '15');
+// Sliding-window limits per client IP (best-effort; see rateLimit.ts).
+const LIMITS = {
+  login: { max: 15, windowMs: 5 * 60_000 },
+  register: { max: 10, windowMs: 60 * 60_000 },
+  forgot: { max: 5, windowMs: 15 * 60_000 },
+} as const;
+
+function tooMany(retryAfter: number) {
+  return json({ ok: false, error: `Too many attempts. Please try again in ${retryAfter} seconds.` }, 429);
+}
 
 export async function POST(req: NextRequest, { params }: { params: { action: string } }) {
   try {
     const action = params.action;
+    const ip = clientIp(req.headers);
 
     if (action === 'register') {
+      const rl = rateLimit(`register:${ip}`, LIMITS.register);
+      if (!rl.ok) return tooMany(rl.retryAfterSeconds);
+
       const body = await req.json().catch(() => ({}));
       const parsed = registerSchema.safeParse(body);
       if (!parsed.success) return badRequest('Validation failed', { errors: flatten(parsed.error) });
@@ -31,40 +46,56 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       const { data: existing } = await db().from('app_users').select('id').eq('email', email).maybeSingle();
       if (existing) return badRequest('An account with this email already exists.');
 
+      const settings = await getSettings();
       const password_hash = await hashPassword(password);
       const { data: user, error } = await db()
         .from('app_users')
-        .insert({ email, password_hash, full_name, phone, role: 'PE', status: 'PENDING_ACTIVATION' })
+        .insert({
+          email, password_hash, full_name, phone, role: 'PE',
+          // When no mail provider is configured (default) the account is usable
+          // immediately; with activation required the user must use the link.
+          status: settings.requireActivation ? 'PENDING_ACTIVATION' : 'ACTIVE',
+          password_changed_at: settings.requireActivation ? null : new Date().toISOString(),
+        })
         .select('*').single();
       if (error) return badRequest(error.message);
 
-      const raw = randomToken(32);
-      await db().from('auth_tokens').insert({
-        user_id: user.id, purpose: 'ACTIVATION', token_hash: sha256Hex(raw),
-        otp_code: generateOtp(6), expires_at: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-      });
-      const base = process.env.APP_BASE_URL ?? 'http://localhost:3000';
-      const link = `${base}/activate?token=${raw}&email=${encodeURIComponent(email)}`;
-      await sendNotification({
-        event: 'ACCOUNT_ACTIVATION', channel: 'EMAIL', recipient: email,
-        vars: { recipient: email, subject: 'Activate your TDRA PE portal account', body: `Welcome ${full_name}. Activate your account: ${link}`, link, name: full_name },
-      }).catch(() => undefined);
+      let link: string | undefined;
+      if (settings.requireActivation && settings.emailNotificationsEnabled) {
+        const raw = randomToken(32);
+        await db().from('auth_tokens').insert({
+          user_id: user.id, purpose: 'ACTIVATION', token_hash: sha256Hex(raw),
+          otp_code: generateOtp(6), expires_at: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+        });
+        const base = process.env.APP_BASE_URL ?? 'http://localhost:3000';
+        link = `${base}/activate?token=${raw}&email=${encodeURIComponent(email)}`;
+        await sendNotification({
+          event: 'ACCOUNT_ACTIVATION', channel: 'EMAIL', recipient: email,
+          vars: { recipient: email, subject: 'Activate your TDRA PE portal account', body: `Welcome ${full_name}. Activate your account: ${link}`, link, name: full_name },
+        }).catch(() => undefined);
+      }
 
-      await logAudit({ entity_id: null, module: 'ACCOUNT', record_id: user.id, action: 'CREATE', actor_id: user.id, actor_email: email, actor_role: 'PE', from_status: null, to_status: 'PENDING_ACTIVATION', remarks: 'Self-registration' });
-      // In non-production, return the activation link so testing is possible without a live mail provider.
-      return json({ ok: true, message: 'Account created. Check your email for the activation link.', activation_link: process.env.NODE_ENV === 'production' ? undefined : link });
+      await logAudit({ entity_id: null, module: 'ACCOUNT', record_id: user.id, action: 'CREATE', actor_id: user.id, actor_email: email, actor_role: 'PE', from_status: null, to_status: user.status, remarks: 'Self-registration' });
+      return json({
+        ok: true,
+        message: settings.requireActivation
+          ? 'Account created. Check your email for the activation link.'
+          : 'Account created. You can sign in now.',
+        activation_link: process.env.NODE_ENV === 'production' ? undefined : link,
+      });
     }
 
     if (action === 'login') {
+      const rl = rateLimit(`login:${ip}`, LIMITS.login);
+      if (!rl.ok) return tooMany(rl.retryAfterSeconds);
+
       const body = await req.json().catch(() => ({}));
       const parsed = loginSchema.safeParse(body);
       if (!parsed.success) return badRequest('Validation failed', { errors: flatten(parsed.error) });
       const { email, password } = parsed.data;
 
       const { data: user } = await db().from('app_users').select('*').eq('email', email).maybeSingle<AppUser>();
-      // Constant-ish response to avoid user enumeration.
       if (!user) return unauthorized('Invalid email or password.');
-
       if (user.status === 'DISABLED') return unauthorized('This account is disabled. Contact the administrator.');
       if (user.locked_until && new Date(user.locked_until) > new Date()) {
         return json({ ok: false, error: 'Account temporarily locked due to failed attempts. Try again later.' }, 423);
@@ -80,7 +111,9 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
         return unauthorized('Invalid email or password.');
       }
 
-      if (user.status === 'PENDING_ACTIVATION') return forbiddenJson('Please activate your account using the link sent to your email.');
+      if (user.status === 'PENDING_ACTIVATION') {
+        return json({ ok: false, error: 'Please activate your account using the link sent to your email.' }, 403);
+      }
 
       await db().from('app_users').update({ failed_login_attempts: 0, locked_until: null, last_login_at: new Date().toISOString() }).eq('id', user.id);
       await setSessionCookie({ uid: user.id, email: user.email, role: user.role, entityId: user.entity_id, name: user.full_name ?? undefined });
@@ -104,8 +137,7 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       if (policy.length) return badRequest('Password does not meet policy', { errors: { password: policy.join('. ') } });
 
       const purpose = action === 'activate' ? 'ACTIVATION' : 'PASSWORD_RESET';
-      const hash = sha256Hex(token);
-      const { data: rows } = await db().from('auth_tokens').select('*').eq('token_hash', hash).eq('purpose', purpose).is('used_at', null).limit(1);
+      const { data: rows } = await db().from('auth_tokens').select('*').eq('token_hash', sha256Hex(token)).eq('purpose', purpose).is('used_at', null).limit(1);
       const row = rows?.[0];
       if (!row) return badRequest('This link is invalid or has already been used.');
       if (new Date(row.expires_at) < new Date()) return badRequest('This link has expired. Please request a new one.');
@@ -113,13 +145,15 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       const password_hash = await hashPassword(password);
       await db().from('app_users').update({ password_hash, status: 'ACTIVE', password_changed_at: new Date().toISOString(), failed_login_attempts: 0, locked_until: null }).eq('id', row.user_id);
       await db().from('auth_tokens').update({ used_at: new Date().toISOString() }).eq('id', row.id);
-
       const { data: user } = await db().from('app_users').select('*').eq('id', row.user_id).maybeSingle<AppUser>();
       if (user) await logAudit({ entity_id: user.entity_id, module: 'ACCOUNT', record_id: user.id, action: action === 'activate' ? 'ACTIVATE' : 'PASSWORD_RESET', actor_id: user.id, actor_email: user.email, actor_role: user.role, from_status: null, to_status: 'ACTIVE', remarks: null });
       return json({ ok: true, message: 'Your password has been set. You can now sign in.' });
     }
 
     if (action === 'forgot') {
+      const rl = rateLimit(`forgot:${ip}`, LIMITS.forgot);
+      if (!rl.ok) return tooMany(rl.retryAfterSeconds);
+
       const body = await req.json().catch(() => ({}));
       const email = String(body.email ?? '').trim().toLowerCase();
       const { data: user } = await db().from('app_users').select('*').eq('email', email).maybeSingle<AppUser>();
@@ -152,8 +186,4 @@ function flatten(err: { issues: Array<{ path: (string | number)[]; message: stri
   const out: Record<string, string> = {};
   for (const i of err.issues) out[i.path.join('.') || '_'] = i.message;
   return out;
-}
-
-function forbiddenJson(message: string) {
-  return json({ ok: false, error: message }, 403);
 }

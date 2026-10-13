@@ -61,6 +61,7 @@ export default function KycReview() {
           <Card>
             <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Submitted PE details</h2>
             <div className="grid grid-cols-2 gap-4">
+              <KeyVal label="PE ID" value={<span className="font-mono font-semibold brand-text">{String(e.entity_code ?? '—')}</span>} />
               <KeyVal label="Legal entity name" value={String(e.legal_entity_name)} />
               <KeyVal label="Entity type" value={String(e.entity_type)} />
               <KeyVal label="Trade licence" value={String(e.trade_licence_number ?? '—')} />

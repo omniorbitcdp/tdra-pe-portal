@@ -4,12 +4,13 @@ import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 
-interface Url { id: string; url: string; method: string; callback_type: string; status: string; template_id: string; remarks: string | null }
-interface Tpl { id: string; template_name: string; status: string }
+interface Url { id: string; url_code: string | null; url: string; method: string; callback_type: string; status: string; template_id: string; remarks: string | null }
+interface Tpl { id: string; template_code: string | null; template_name: string; status: string }
 
 export default function UrlsPage() {
   const [items, setItems] = useState<Url[]>([]);
   const [templates, setTemplates] = useState<Tpl[]>([]);
+  const [allTemplates, setAllTemplates] = useState<Tpl[]>([]);
   const [form, setForm] = useState({ template_id: '', url: '', method: 'POST', callback_type: 'DLT' });
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(''); const [errors, setErrors] = useState<Record<string, string>>({}); const [notice, setNotice] = useState(''); const [busy, setBusy] = useState(false);
@@ -17,7 +18,7 @@ export default function UrlsPage() {
   async function load() {
     const [u, t] = await Promise.all([api<{ urls: Url[] }>('/api/pe/urls'), api<{ templates: Tpl[] }>('/api/pe/templates')]);
     if (u.ok) setItems((u.data as unknown as { urls: Url[] }).urls ?? []);
-    if (t.ok) setTemplates(((t.data as unknown as { templates: Tpl[] }).templates ?? []).filter((x) => x.status === 'APPROVED'));
+    if (t.ok) { const all = (t.data as unknown as { templates: Tpl[] }).templates ?? []; setAllTemplates(all); setTemplates(all.filter((x) => x.status === 'APPROVED')); }
     setLoaded(true);
   }
   useEffect(() => { load(); }, []);
@@ -55,13 +56,13 @@ export default function UrlsPage() {
       <Card className="overflow-x-auto">
         {items.length === 0 ? <Empty>No URLs yet.</Empty> : (
           <table className="w-full">
-            <thead><tr><th className="th">URL</th><th className="th">Method</th><th className="th">Type</th><th className="th">Status</th><th className="th">Remarks</th><th className="th"></th></tr></thead>
+            <thead><tr><th className="th">URL ID</th><th className="th">URL</th><th className="th">Template</th><th className="th">Method</th><th className="th">Type</th><th className="th">Status</th><th className="th">Remarks</th><th className="th"></th></tr></thead>
             <tbody>
               {items.map((u) => (
                 <tr key={u.id}>
-                  <td className="td break-all font-medium">{u.url}</td><td className="td">{u.method}</td><td className="td">{u.callback_type}</td>
+                  <td className="td font-mono text-xs">{u.url_code ?? "—"}</td><td className="td break-all font-medium">{u.url}</td><td className="td text-xs">{allTemplates.find((x) => x.id === u.template_id)?.template_code ?? "—"}</td><td className="td">{u.method}</td><td className="td">{u.callback_type}</td>
                   <td className="td"><StatusPill status={u.status} /></td><td className="td">{u.remarks ?? '—'}</td>
-                  <td className="td">{(u.status === 'DRAFT' || u.status === 'CLARIFICATION_REQUIRED' || u.status === 'REJECTED') && <button className="btn-ghost" onClick={() => submit(u.id)}>Submit</button>}</td>
+                  <td className="td">{(u.status === 'DRAFT' || u.status === 'CLARIFICATION_REQUIRED' || u.status === 'REJECTED') && <button className="btn-ghost" onClick={() => submit(u.id)}>{u.status === 'DRAFT' ? 'Submit' : 'Resubmit'}</button>}</td>
                 </tr>
               ))}
             </tbody>

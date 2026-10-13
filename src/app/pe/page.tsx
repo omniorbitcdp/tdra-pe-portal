@@ -7,7 +7,7 @@ import { MANDATORY_DOC_TYPES, DOC_TYPE_LABELS } from '@/lib/constants';
 
 interface Doc { id: string; doc_type: string; status: string; remarks: string | null }
 interface Data {
-  entity: { legal_entity_name: string; entity_type: string; kyc_status: string; kyc_info_approved: boolean } | null;
+  entity: { legal_entity_name: string; entity_code: string | null; entity_type: string; kyc_status: string; kyc_info_approved: boolean } | null;
   kyc: { status: string; documents: Doc[]; complete: boolean };
   headers: Array<{ id: string; header_name: string; status: string }>;
   templates: Array<{ id: string; template_name: string; status: string }>;
@@ -34,7 +34,7 @@ export default function PeDashboard() {
 
   return (
     <div>
-      <PageHeader title={data.entity.legal_entity_name} subtitle={`${data.entity.entity_type} · KYC ${data.entity.kyc_status.replace(/_/g, ' ')}`} />
+      <PageHeader title={data.entity.legal_entity_name} subtitle={`PE ID ${data.entity.entity_code ?? '—'} · ${data.entity.entity_type} · KYC ${data.entity.kyc_status.replace(/_/g, ' ')}`} />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {steps.map((s) => (
           <Card key={s.label}>
@@ -43,6 +43,12 @@ export default function PeDashboard() {
             <div className="mt-2"><StatusPill status={s.status} /></div>
           </Card>
         ))}
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Your PE ID</span>
+        <span className="font-mono text-lg font-bold brand-text">{data.entity.entity_code ?? "—"}</span>
+        <span className="text-xs text-slate-500">Quote this in every request to the operator</span>
       </div>
 
       <h2 className="mb-3 mt-8 text-lg font-semibold">KYC document pack</h2>

@@ -52,6 +52,67 @@ export function isKycPackComplete(docs: Array<{ doc_type: DocType; status: strin
   return MANDATORY_DOC_TYPES.every((t) => verified.has(t));
 }
 
+/** Human labels for the mandatory entity fields a PE must complete before submitting KYC. */
+export const REQUIRED_ENTITY_FIELDS: Array<[keyof EntityLike, string]> = [
+  ['legal_entity_name', 'Legal entity name'],
+  ['entity_type', 'Entity type'],
+  ['trade_licence_number', 'Trade licence number'],
+  ['registered_address', 'Registered address'],
+  ['emirate', 'State / Emirate'],
+  ['city', 'City'],
+  ['industry', 'Industry / sector'],
+  ['business_description', 'Business description'],
+  ['signatory_name', 'Authorised signatory full name'],
+  ['signatory_designation', 'Signatory designation'],
+  ['official_email', 'Official email'],
+  ['mobile', 'Mobile number'],
+];
+
+export interface EntityLike {
+  legal_entity_name?: string | null; entity_type?: string | null; trade_licence_number?: string | null;
+  registered_address?: string | null; emirate?: string | null; city?: string | null; industry?: string | null;
+  business_description?: string | null; signatory_name?: string | null; signatory_designation?: string | null;
+  official_email?: string | null; mobile?: string | null;
+}
+
+export function missingEntityFields(entity: EntityLike | null): string[] {
+  if (!entity) return REQUIRED_ENTITY_FIELDS.map(([, label]) => label);
+  return REQUIRED_ENTITY_FIELDS
+    .filter(([key]) => {
+      const v = entity[key];
+      return typeof v !== 'string' || v.trim() === '';
+    })
+    .map(([, label]) => label);
+}
+
+export interface KycSubmitGate extends GateResult {
+  missingFields: string[];
+  missingDocuments: string[];
+}
+
+/**
+ * §4 step 2 / §6 — gate for the PE "Submit KYC for review" action.
+ * All mandatory entity fields must be filled AND all four TDRA documents uploaded.
+ * (Documents may still be Pending Verification — that is the reviewer's job.)
+ */
+export function canSubmitKycPack(
+  entity: (EntityLike & { kyc_status?: RegStatus }) | null,
+  docs: Array<{ doc_type: DocType; status?: string }>,
+): KycSubmitGate {
+  const missingFields = missingEntityFields(entity);
+  const uploaded = new Set(docs.map((d) => d.doc_type));
+  const missingDocuments = MANDATORY_DOC_TYPES.filter((t) => !uploaded.has(t)) as unknown as string[];
+  if (!entity) return { ok: false, reason: 'Entity profile not found.', missingFields, missingDocuments };
+  if (entity.kyc_status === 'APPROVED') return { ok: false, reason: 'KYC is already approved.', missingFields, missingDocuments };
+  if (missingDocuments.length) {
+    return { ok: false, reason: `Upload all four mandatory documents first. Missing: ${missingDocuments.join(', ')}.`, missingFields, missingDocuments };
+  }
+  if (missingFields.length) {
+    return { ok: false, reason: `Complete the entity details first. Missing: ${missingFields.join(', ')}.`, missingFields, missingDocuments };
+  }
+  return { ok: true, missingFields, missingDocuments };
+}
+
 /** §6 — Header registration requires approved KYC. */
 export function canCreateHeader(ctx: { kyc_status: RegStatus } | null): GateResult {
   if (!ctx) return fail('Entity profile not found.');

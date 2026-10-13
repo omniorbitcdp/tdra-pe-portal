@@ -127,6 +127,19 @@ git push -u origin main
 
 ---
 
+## 4.6 Upgrading an existing database (v1.1)
+
+If you already ran `schema.sql`, apply the incremental migration instead of re-running the whole schema:
+
+```
+supabase/migrations/2026-10-13_v1.1_ref_codes_indexes.sql
+```
+
+It is idempotent and adds: **PE / Header / Template / URL reference codes** (`PE-000001`, `HDR-000001`,
+`TPL-000001`, `URL-000001`) with a trigger that assigns them on every insert and backfills existing rows;
+performance indexes; and the `require_activation` / `email_notifications_enabled` settings.
+A fresh install gets all of this directly from `schema.sql`.
+
 ## 5. Demo logins (from `seed.sql`)
 
 | Email | Password | Role |
@@ -284,4 +297,3 @@ These follow the document's "proposed decisions" with a sensible default; confir
 | 9 | PE sees statuses, remarks, history; can resubmit | ✅ |
 | 10 | Approval/rejection auditable (reviewer, timestamp, remarks) | ✅ |
 | 11 | Backend enforces status + access, not just the frontend | ✅ |
-# tdra-pe-portal

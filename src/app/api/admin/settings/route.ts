@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { getSession, guard } from '@/lib/auth';
 import { json, badRequest, serverError } from '@/lib/http';
-import { getSettings } from '@/lib/settings';
+import { getSettings, invalidateSettingsCache } from '@/lib/settings';
 import { logAudit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +19,7 @@ export async function PUT(req: NextRequest) {
   const g = guard(s, ['ADMIN']); if (g) return g;
   try {
     const body = await req.json().catch(() => ({}));
-    const allowed = ['operator_name', 'operator_short_name', 'logo_data_url', 'brand_color', 'max_kyc_file_mb', 'allowed_kyc_mime', 'retention_days'];
+    const allowed = ['operator_name', 'operator_short_name', 'logo_data_url', 'brand_color', 'max_kyc_file_mb', 'allowed_kyc_mime', 'retention_days', 'require_activation', 'email_notifications_enabled'];
     const client = db();
     for (const key of allowed) {
       if (key in body) {
@@ -30,6 +30,7 @@ export async function PUT(req: NextRequest) {
         await client.from('platform_settings').upsert({ key, value: { value: body[key] }, updated_at: new Date().toISOString(), updated_by: s!.uid }, { onConflict: 'key' });
       }
     }
+    invalidateSettingsCache();
     await logAudit({ entity_id: null, module: 'ADMIN', record_id: null, action: 'UPDATE_SETTINGS', actor_id: s!.uid, actor_email: s!.email, actor_role: s!.role, from_status: null, to_status: null, remarks: Object.keys(body).join(', ') });
     return json({ ok: true, settings: await getSettings() });
   } catch (e) { return serverError(e); }
