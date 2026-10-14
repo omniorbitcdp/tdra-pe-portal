@@ -65,7 +65,6 @@ export async function AppShell({ modules = [], children }: AppShellProps) {
             )}
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold leading-tight text-slate-800">{settings.operatorName}</span>
-              <span className="block truncate text-xs text-slate-500">TDRA PE Registration Portal</span>
             </span>
           </Link>
 
@@ -93,7 +92,7 @@ export async function AppShell({ modules = [], children }: AppShellProps) {
       </main>
 
       <footer className="mx-auto max-w-[1500px] px-5 pb-8 pt-2 text-center text-[11px] text-slate-400">
-        {settings.operatorName} · TDRA Principal Entity Portal
+        Onextel Copyright 2026
       </footer>
     </div>
   );

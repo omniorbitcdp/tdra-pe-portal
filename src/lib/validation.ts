@@ -1,5 +1,6 @@
 // Input + file validation (requirements §4, appendix items 1-3).
 import { z } from 'zod';
+import { extractVariables } from './templateVars';
 import {
   ENTITY_TYPES, KYC_ALLOWED_MIME, UAE_EMIRATES, DEFAULT_MAX_KYC_FILE_MB,
 } from './constants';
@@ -57,10 +58,35 @@ export const templateSchema = z.object({
   header_id: z.string().uuid('Select an approved header'),
   template_name: z.string().trim().min(2, 'Template name is required'),
   category: z.enum(['TRANSACTIONAL', 'OTP', 'PROMOTIONAL', 'SERVICE']).default('TRANSACTIONAL'),
-  channel: z.enum(['SMS', 'WHATSAPP', 'EMAIL']).default('SMS'),
+  // SMS only — the platform registers SMS templates exclusively, so the channel
+  // is fixed rather than chosen.
+  channel: z.literal('SMS').default('SMS'),
   dlt_template_id: z.string().trim().optional().or(z.literal('')),
   body: z.string().trim().min(5, 'Template body is required'),
   variables: z.string().trim().optional().or(z.literal('')),
+  variable_samples: z.record(z.string()).default({}),
+}).superRefine((v, ctx) => {
+  const declared = extractVariables(v.body);
+  for (const name of declared) {
+    const sample = (v.variable_samples?.[name] ?? '').trim();
+    if (!sample) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['variable_samples', name],
+        message: `Sample content is required for <${name}>`,
+      });
+    }
+  }
+  // A body must not reference a variable that was never declared — keeps the
+  // approver's preview honest.
+  const strays = Array.from(v.body.matchAll(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g)).map((m) => m[1]);
+  if (strays.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['body'],
+      message: `Use the <var1>, <var2> … format for variables (found {{${strays[0]}}})`,
+    });
+  }
 });
 
 export const urlSchema = z.object({

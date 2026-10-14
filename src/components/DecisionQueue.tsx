@@ -1,14 +1,17 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid, Toolbar } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
+import { extractVariables, renderWithSamples, tokenise } from '@/lib/templateVars';
 
 interface Row {
   id: string; entity_name: string; status: string; remarks: string | null;
   header_code?: string | null; template_code?: string | null; url_code?: string | null;
   header_name?: string; sender_id?: string; template_name?: string; category?: string;
-  url?: string; submitted_at?: string | null; [k: string]: unknown;
+  url?: string; submitted_at?: string | null;
+  body?: string; variables?: string | null; variable_samples?: Record<string, string> | null;
+  [k: string]: unknown;
 }
 interface Summary {
   module: string; label: string; href: string;
@@ -34,6 +37,7 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
   const [view, setView] = useState<View>('PENDING');
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState('');
+  const [open, setOpen] = useState<Record<string, boolean>>({});
 
   async function load() {
     const [q, sm] = await Promise.all([
@@ -77,7 +81,7 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
   const detail = (r: Row) => module === 'HEADER'
     ? <div><div className="font-medium text-slate-800">{r.header_name}</div><div className="text-xs text-slate-400">Sender ID {r.sender_id} · {String(r.header_type ?? '')}</div></div>
     : module === 'TEMPLATE'
-      ? <div><div className="font-medium text-slate-800">{r.template_name}</div><div className="text-xs text-slate-400">{r.category} · {String(r.channel ?? '')}</div></div>
+      ? <div><div className="font-medium text-slate-800">{r.template_name}</div><div className="text-xs text-slate-400">{r.category} · SMS</div><button className="mt-1 text-xs font-semibold text-blue-700 hover:underline" onClick={() => setOpen({ ...open, [r.id]: !open[r.id] })}>{open[r.id] ? 'Hide message' : 'View message & sample content'}</button></div>
       : <div className="max-w-[420px]"><div className="break-all font-medium text-slate-800">{r.url}</div><div className="text-xs text-slate-400">{String(r.method ?? '')} · {String(r.callback_type ?? '')}</div></div>;
 
   return (
@@ -116,6 +120,7 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
               </tr></thead>
               <tbody>
                 {filtered.map((r) => (
+                  <Fragment key={r.id}>
                   <tr key={r.id} className="tr">
                     <td className="td whitespace-nowrap font-mono text-xs">{String(r.header_code ?? r.template_code ?? r.url_code ?? '—')}</td>
                     <td className="td font-medium">{r.entity_name}</td>
@@ -133,12 +138,58 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
                       ) : <span className="text-xs text-slate-400">No action available</span>}
                     </td>
                   </tr>
+                  {module === 'TEMPLATE' && open[r.id] && (
+                    <tr className="tr">
+                      <td className="td bg-slate-50" colSpan={6}>
+                        <TemplatePreview body={String(r.body ?? '')} samples={(r.variable_samples ?? {}) as Record<string, string>} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
           )}
         </div>
       </Card>
+    </div>
+  );
+}
+
+/** The SMS exactly as the subscriber receives it, with every variable and the
+ *  sample content the PE declared. */
+function TemplatePreview({ body, samples }: { body: string; samples: Record<string, string> }) {
+  const vars = extractVariables(body);
+  return (
+    <div className="space-y-3 py-1">
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">SMS template body</div>
+      <p className="whitespace-pre-wrap text-sm text-slate-800">
+        {tokenise(body).map((p, i) => p.isVar
+          ? <span key={i} className="rounded bg-blue-50 px-1 font-mono text-xs text-blue-700 ring-1 ring-blue-200">{p.text}</span>
+          : <span key={i}>{p.text}</span>)}
+      </p>
+
+      {vars.length > 0 && (
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Variables &amp; sample content</div>
+          <table className="mt-1 w-full max-w-xl">
+            <thead><tr><th className="th">Variable</th><th className="th">Sample content</th></tr></thead>
+            <tbody>
+              {vars.map((v) => (
+                <tr key={v}>
+                  <td className="td font-mono text-xs text-blue-700">&lt;{v}&gt;</td>
+                  <td className="td text-xs">{samples[v] ? samples[v] : <span className="text-rose-600">not provided</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="rounded border border-blue-100 bg-blue-50/50 p-3">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">As received by the subscriber</div>
+        <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{renderWithSamples(body, samples)}</p>
+      </div>
     </div>
   );
 }

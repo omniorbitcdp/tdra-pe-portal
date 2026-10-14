@@ -92,6 +92,7 @@ export interface TemplateRegistration {
   dlt_template_id: string | null;
   body: string;
   variables: string | null;
+  variable_samples: Record<string, string> | null;
   status: RegStatus;
   remarks: string | null;
   created_by: string | null;

@@ -88,8 +88,8 @@ on conflict (id) do nothing;
 -- Template registrations (must reference an APPROVED header)
 -- ---------------------------------------------------------------------------
 insert into template_registrations (id, entity_id, header_id, template_name, category, channel, dlt_template_id, body, variables, status, remarks, created_by, submitted_at, decided_at, decided_by) values
-  ('cccccccc-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001','Order Shipped','TRANSACTIONAL','SMS','DLT-ACME-1001','Dear {{name}}, your order {{order_id}} has shipped and will arrive by {{date}}. Track: {{link}}','name,order_id,date,link','APPROVED','Approved for transactional use.','55555555-5555-5555-5555-555555555555', now() - interval '12 days', now() - interval '10 days','44444444-4444-4444-4444-444444444444'),
-  ('cccccccc-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001','Login OTP','OTP','SMS','DLT-ACME-1002','{{otp}} is your Acme verification code. Valid for 5 minutes. Do not share.','otp','SUBMITTED','Awaiting review.','55555555-5555-5555-5555-555555555555', now() - interval '1 day', null, null)
+  ('cccccccc-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001','Order Shipped','TRANSACTIONAL','SMS','DLT-ACME-1001','Dear <var1>, your order <var2> has shipped and will arrive by <var3>. Track: <var4>','name,order_id,date,link','APPROVED','Approved for transactional use.','55555555-5555-5555-5555-555555555555', now() - interval '12 days', now() - interval '10 days','44444444-4444-4444-4444-444444444444'),
+  ('cccccccc-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001','Login OTP','OTP','SMS','DLT-ACME-1002','<var1> is your Acme verification code. Valid for 5 minutes. Do not share.','otp','SUBMITTED','Awaiting review.','55555555-5555-5555-5555-555555555555', now() - interval '1 day', null, null)
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -129,3 +129,20 @@ on conflict do nothing;
 -- ============================================================================
 -- End of seed
 -- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- Derive the declared <varN> variable list and sample content for demo rows.
+-- ---------------------------------------------------------------------------
+update template_registrations
+set variables = (
+  select string_agg('var' || m[1], ',' order by m[1]::int)
+  from regexp_matches(body, '<var([0-9]+)>', 'g') as m
+)
+where body ~ '<var[0-9]+>';
+
+update template_registrations t
+set variable_samples = coalesce((
+  select jsonb_object_agg(v, 'Sample content')
+  from unnest(string_to_array(t.variables, ',')) as v
+), '{}'::jsonb)
+where t.variables is not null and t.variables <> '' and t.variable_samples = '{}'::jsonb;

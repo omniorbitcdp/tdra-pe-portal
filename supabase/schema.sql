@@ -168,10 +168,11 @@ create table if not exists template_registrations (
   header_id     uuid not null references header_registrations(id) on delete restrict,
   template_name text not null,
   category      text not null default 'TRANSACTIONAL',   -- TRANSACTIONAL / OTP / PROMOTIONAL / SERVICE
-  channel       text not null default 'SMS' check (channel in ('SMS','WHATSAPP','EMAIL')),
+  channel       text not null default 'SMS' check (channel = 'SMS'),   -- SMS templates only
   dlt_template_id text,
   body          text not null,
-  variables     text,                    -- comma list of {{var}} placeholders
+  variables     text,                    -- comma list of declared <varN> tokens
+  variable_samples jsonb not null default '{}'::jsonb,   -- { "var1": "sample content" }
   status        text not null default 'DRAFT' check (status in (
                   'DRAFT','SUBMITTED','UNDER_REVIEW','CLARIFICATION_REQUIRED',
                   'RESUBMITTED','APPROVED','REJECTED')),
