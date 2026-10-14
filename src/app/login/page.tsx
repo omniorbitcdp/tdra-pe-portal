@@ -7,9 +7,10 @@ import { getSettings } from '@/lib/settings';
 export const dynamic = 'force-dynamic';
 
 const HIGHLIGHTS = [
-  { title: 'Register your sender IDs', body: 'Raise headers, track every approval stage and keep the DLT reference in one place.' },
-  { title: 'Build SMS templates', body: 'Declare variables as <var1>, <var2> … and attach the sample content a reviewer needs.' },
-  { title: 'Clear the KYC pack', body: 'Trade licence, Emirates ID, signatory letter and VAT certificate — reviewed end to end.' },
+  { title: 'Register & onboard your business', body: 'Complete your entity and signatory details in one guided flow.' },
+  { title: 'Manage business display names', body: 'Raise headers, track every approval stage and keep the DLT reference in one place.' },
+  { title: 'Configure headers & templates', body: 'Declare variables as <var1>, <var2> … with the sample content a reviewer needs.' },
+  { title: 'Clear your KYC pack', body: 'Trade licence, Emirates ID, signatory letter and VAT certificate — reviewed end to end.' },
 ];
 
 export default async function LoginPage() {
@@ -23,12 +24,12 @@ export default async function LoginPage() {
   } catch { /* fall back to defaults */ }
 
   return (
-    <div className="grid min-h-screen bg-white lg:grid-cols-[1.05fr_1fr]">
-      {/* left: brand / story panel */}
-      <aside className="relative hidden overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-sky-50 lg:flex lg:flex-col lg:justify-between lg:p-12">
-        <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-sky-200/40 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute right-10 top-1/3 h-40 w-40 rounded-full bg-amber-100/60 blur-2xl" />
+    <div className="grid min-h-screen bg-white lg:grid-cols-[1.15fr_1fr]">
+      {/* ---------------- left: brand / story panel ---------------- */}
+      <aside className="relative hidden overflow-hidden bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-200/50 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-sky-200/50 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute right-16 top-1/4 h-40 w-40 rounded-full bg-amber-100/70 blur-2xl" />
 
         <div className="relative flex items-center gap-3">
           {brand.logo ? (
@@ -42,21 +43,22 @@ export default async function LoginPage() {
           <span className="text-lg font-bold tracking-tight text-slate-800">{brand.name}</span>
         </div>
 
-        <div className="relative max-w-lg">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-blue-700 ring-1 ring-blue-100">
-            Principal Entity Onboarding
+        <div className="relative max-w-xl">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-blue-700 ring-1 ring-blue-100">
+            Business Communication Platform
           </span>
           <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-slate-900">
-            Get your SMS sender IDs, templates and DLT URLs approved.
+            Solving the unsolicited communication crisis.
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-slate-600">
-            A single workspace for Principal Entities, KYC reviewers and the platform administrator — every step gated in the right order.
+            A secure and compliant platform that streamlines your business registration and commercial messaging,
+            while ensuring regulatory adherence at every step.
           </p>
 
-          <ul className="mt-8 space-y-4">
+          <ul className="mt-8 space-y-3.5">
             {HIGHLIGHTS.map((h) => (
               <li key={h.title} className="flex gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">✓</span>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">✓</span>
                 <span>
                   <span className="block text-sm font-semibold text-slate-800">{h.title}</span>
                   <span className="block text-xs leading-relaxed text-slate-500">{h.body}</span>
@@ -66,21 +68,44 @@ export default async function LoginPage() {
           </ul>
         </div>
 
-        <div className="relative grid grid-cols-3 gap-3">
-          {[
-            { k: 'SMS', v: 'Templates only' },
-            { k: '4', v: 'Mandatory KYC docs' },
-            { k: '6', v: 'Gated workflow steps' },
-          ].map((s) => (
-            <div key={s.k} className="rounded-xl border border-white/70 bg-white/60 px-4 py-3 backdrop-blur">
-              <div className="text-xl font-bold text-slate-800">{s.k}</div>
-              <div className="text-[11px] leading-tight text-slate-500">{s.v}</div>
-            </div>
-          ))}
+        {/* illustration: message cards on a phone frame */}
+        <div className="relative mt-10 flex items-end gap-4">
+          <svg viewBox="0 0 300 168" className="h-[168px] w-full max-w-[420px]" role="img" aria-label="Registered business messages">
+            <rect x="8" y="14" width="132" height="146" rx="14" fill="#ffffff" stroke="#dbeafe" />
+            <rect x="56" y="22" width="36" height="5" rx="2.5" fill="#e2e8f0" />
+            <rect x="22" y="42" width="78" height="26" rx="9" fill="#eff6ff" />
+            <rect x="30" y="50" width="52" height="4" rx="2" fill="#bfdbfe" />
+            <rect x="30" y="58" width="34" height="4" rx="2" fill="#bfdbfe" />
+            <rect x="48" y="78" width="80" height="26" rx="9" fill="#3b82f6" />
+            <rect x="56" y="86" width="54" height="4" rx="2" fill="#bfdbfe" />
+            <rect x="56" y="94" width="38" height="4" rx="2" fill="#bfdbfe" />
+            <rect x="22" y="114" width="70" height="22" rx="9" fill="#eff6ff" />
+            <rect x="30" y="121" width="44" height="4" rx="2" fill="#bfdbfe" />
+            <rect x="30" y="128" width="28" height="4" rx="2" fill="#bfdbfe" />
+
+            <rect x="160" y="6" width="128" height="46" rx="12" fill="#ffffff" stroke="#e2e8f0" />
+            <circle cx="180" cy="29" r="11" fill="#dcfce7" />
+            <path d="M175 29l4 4 7-8" stroke="#16a34a" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <rect x="199" y="21" width="72" height="5" rx="2.5" fill="#e2e8f0" />
+            <rect x="199" y="32" width="48" height="5" rx="2.5" fill="#eef2f7" />
+
+            <rect x="160" y="62" width="128" height="46" rx="12" fill="#ffffff" stroke="#e2e8f0" />
+            <circle cx="180" cy="85" r="11" fill="#dbeafe" />
+            <rect x="175" y="80" width="10" height="7" rx="1.6" fill="#3b82f6" />
+            <path d="M175 82l5 4 5-4" stroke="#ffffff" strokeWidth="1.3" fill="none" />
+            <rect x="199" y="77" width="72" height="5" rx="2.5" fill="#e2e8f0" />
+            <rect x="199" y="88" width="40" height="5" rx="2.5" fill="#eef2f7" />
+
+            <rect x="160" y="118" width="128" height="46" rx="12" fill="#ffffff" stroke="#e2e8f0" />
+            <circle cx="180" cy="141" r="11" fill="#fef3c7" />
+            <rect x="175" y="138" width="10" height="7" rx="1.6" fill="#f59e0b" />
+            <rect x="199" y="133" width="72" height="5" rx="2.5" fill="#e2e8f0" />
+            <rect x="199" y="144" width="56" height="5" rx="2.5" fill="#eef2f7" />
+          </svg>
         </div>
       </aside>
 
-      {/* right: login module */}
+      {/* ---------------- right: sign-in module ---------------- */}
       <main className="flex flex-col justify-center px-6 py-12 sm:px-10">
         <div className="mx-auto w-full max-w-md">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
@@ -95,23 +120,19 @@ export default async function LoginPage() {
             <span className="text-base font-bold text-slate-800">{brand.name}</span>
           </div>
 
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Sign in</h2>
-          <p className="mt-1.5 text-sm text-slate-500">Welcome back — sign in to continue your registrations.</p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+            <p className="text-sm font-semibold text-blue-700">Hello!</p>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Welcome to {brand.name}</h2>
+            <p className="mt-1.5 text-sm text-slate-500">A secure platform to manage your commercial communication.</p>
 
-          <LoginForm />
+            <LoginForm />
 
-          <div className="mt-8 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Demo accounts</p>
-            <p className="mt-1 font-mono text-[11px] leading-relaxed text-slate-600">
-              admin@tdra.demo / Admin@12345<br />
-              pe.demo@acme.ae / PE@12345
-            </p>
+            <div className="mt-6 border-t border-slate-100 pt-4 text-center text-xs">
+              <Link className="font-semibold text-blue-700 hover:underline" href="/register">New Business Registration</Link>
+            </div>
           </div>
 
           <p className="mt-6 text-center text-[11px] text-slate-400">Onextel Copyright 2026</p>
-          <p className="mt-2 text-center text-[11px] text-slate-400">
-            <Link className="hover:text-slate-600" href="/register">Create a PE account</Link>
-          </p>
         </div>
       </main>
     </div>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { getSettings } from '@/lib/settings';
 
-export const metadata: Metadata = { title: 'Onextel Portal', description: 'Principal Entity DLT registration portal' };
+export const metadata: Metadata = { title: 'Onextel Portal', description: 'Business registration and DLT communication portal' };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();

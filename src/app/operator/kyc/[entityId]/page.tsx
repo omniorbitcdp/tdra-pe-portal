@@ -87,7 +87,7 @@ export default function KycReview() {
       {notSubmitted && (
         <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <strong>Not submitted yet.</strong> The pack is in <strong>{String(e.kyc_status).replace(/_/g, ' ')}</strong>. It becomes
-          approvable once the Principal Entity presses <strong>Submit KYC for review</strong> on <code className="rounded bg-amber-100 px-1">/pe/kyc</code>.
+          approvable once the enterprise presses <strong>Submit KYC for review</strong> on <code className="rounded bg-amber-100 px-1">/pe/kyc</code>.
         </div>
       )}
 

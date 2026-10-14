@@ -25,7 +25,7 @@ export default function PeDashboard() {
   if (!data.entity) {
     return (
       <div>
-        <PageHeader title="Welcome" subtitle="Let's get your Principal Entity registered." />
+        <PageHeader title="Welcome" subtitle="Let's get your business registered." />
         <Card>
           <h2 className="text-lg font-semibold">Step 1 — complete your entity details</h2>
           <p className="mt-2 text-sm text-slate-600">Then upload your four TDRA documents and submit the pack for review.</p>

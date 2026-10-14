@@ -69,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
       const body = await req.json().catch(() => ({}));
       const parsed = loginSchema.safeParse(body);
       if (!parsed.success) return badRequest('Validation failed', { errors: flatten(parsed.error) });
-      const { email, password } = parsed.data;
+      const { email, password, portal } = parsed.data;
 
       const { data: user } = await db().from('app_users').select('*').eq('email', email).maybeSingle<AppUser>();
       if (!user) return unauthorized('Invalid email or password.');
@@ -86,6 +86,17 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
         await db().from('app_users').update(patch).eq('id', user.id);
         await logAudit({ entity_id: user.entity_id, module: 'AUTH', record_id: user.id, action: 'LOGIN_FAILED', actor_id: user.id, actor_name: user.full_name ?? null, actor_email: email, actor_role: user.role, from_status: null, to_status: null, remarks: `Failed attempt ${attempts}` });
         return unauthorized('Invalid email or password.');
+      }
+
+      // The account must belong to the door it came through: a business account
+      // cannot sign in at the Telco tab, and a reviewer cannot use the
+      // Enterprise tab. Checked only after the password verified, so the
+      // message never reveals whether an address exists.
+      if (portal === 'ENTERPRISE' && user.role !== 'PE') {
+        return json({ ok: false, error: 'This account signs in from the Telco tab.' }, 403);
+      }
+      if (portal === 'TELCO' && user.role === 'PE') {
+        return json({ ok: false, error: 'This account signs in from the Enterprise tab.' }, 403);
       }
 
       // A legacy PENDING_ACTIVATION row (from the retired activation flow) is

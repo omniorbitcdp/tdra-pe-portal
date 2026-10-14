@@ -5,7 +5,7 @@ export const ROLES = ['PE', 'OPERATOR_KYC', 'OPERATOR_HEADER', 'OPERATOR_TEMPLAT
 export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABELS: Record<Role, string> = {
-  PE: 'Principal Entity',
+  PE: 'Enterprise',
   OPERATOR_KYC: 'Telecom Operator – KYC Approver',
   OPERATOR_HEADER: 'Telecom Operator – Header Approver',
   OPERATOR_TEMPLATE_URL: 'Telecom Operator – Template/URL Approver',

@@ -16,6 +16,8 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
+  // Which door the user is signing in through; validated against the account's role.
+  portal: z.enum(['ENTERPRISE', 'TELCO']).optional(),
   email,
   password: z.string().min(1, 'Password is required'),
 });

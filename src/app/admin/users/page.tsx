@@ -37,7 +37,7 @@ export default function AdminUsers() {
   if (!loaded) return <Loader />;
   return (
     <div>
-      <PageHeader title="Users & Role Assignments" subtitle="Operator, admin and PE accounts. Least-privilege, audited." />
+      <PageHeader title="Users & Role Assignments" subtitle="Operator, admin and enterprise accounts. Least-privilege, audited." />
       <ErrorBox message={error} /><Notice message={notice} />
       <Card className="mb-6">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Create user</h2>
