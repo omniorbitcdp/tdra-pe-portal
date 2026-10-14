@@ -171,7 +171,7 @@ export default function ApiConfigPage() {
               {r && <span className={`pill ${r.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{r.ok ? 'OK' : 'FAILED'} {r.status ? `· HTTP ${r.status}` : ''} · {r.timeMs}ms</span>}
             </div>
             {r?.requestPreview && (
-              <div className="mb-3 rounded-lg bg-slate-900 p-3 text-xs text-slate-100">
+              <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
                 <div className="font-mono">{r.requestPreview.method} {r.requestPreview.url}</div>
                 <pre className="mt-2 max-h-[90px] overflow-auto whitespace-pre-wrap">{JSON.stringify(r.requestPreview.headers, null, 2)}</pre>
                 {r.requestPreview.body && <pre className="mt-2 max-h-[90px] overflow-auto whitespace-pre-wrap">{r.requestPreview.body}</pre>}

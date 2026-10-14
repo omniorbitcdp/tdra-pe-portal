@@ -102,7 +102,7 @@ export function StatCard({ label, value, hint, tone = 'default', href, active }:
       {hint && <div className="mt-1.5 text-[11px] text-slate-400">{hint}</div>}
     </>
   );
-  const cls = `card block p-4 transition ${active ? 'ring-2 ring-slate-900' : href ? 'hover:-translate-y-0.5 hover:shadow-md' : ''}`;
+  const cls = `card block p-4 transition ${active ? 'ring-2 ring-blue-300' : href ? 'hover:-translate-y-0.5 hover:shadow-md' : ''}`;
   return href ? <a href={href} className={cls}>{inner}</a> : <div className={cls}>{inner}</div>;
 }
 
@@ -159,5 +159,9 @@ export function Field({ label, children }: { label: string; children: React.Reac
 export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
   const initials = name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || '?';
   const cls = size === 'sm' ? 'h-6 w-6 text-[10px]' : 'h-8 w-8 text-xs';
-  return <span className={`inline-flex ${cls} shrink-0 items-center justify-center rounded-full bg-slate-700 font-bold text-white`}>{initials}</span>;
+  return (
+    <span className={`inline-flex ${cls} shrink-0 items-center justify-center rounded-full bg-blue-50 font-bold text-blue-700 ring-1 ring-blue-100`}>
+      {initials}
+    </span>
+  );
 }

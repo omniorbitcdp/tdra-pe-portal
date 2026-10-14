@@ -2,25 +2,40 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/client';
-import { PageHeader, Card, StatusPill, KeyVal } from '@/components/ui';
+import { PageHeader, Card, StatusPill, KeyVal, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import { MANDATORY_DOC_TYPES, DOC_TYPE_LABELS, DOC_STATUSES } from '@/lib/constants';
 
 interface Doc { id: string; doc_type: string; file_name: string; status: string; remarks: string | null }
-interface Entity { id: string; legal_entity_name: string; kyc_status: string; kyc_info_approved: boolean; [k: string]: unknown }
-interface Data { entity: Entity; documents: Doc[]; packComplete: boolean; users: Array<{ email: string; full_name: string | null; status: string }>; history: Array<{ id: number; action: string; remarks: string | null; actor_email: string | null; created_at: string }> }
+interface Entity { id: string; entity_code: string | null; legal_entity_name: string; kyc_status: string; kyc_info_approved: boolean; [k: string]: unknown }
+interface HistoryRow { id: number; action: string; remarks: string | null; actor_name?: string | null; actor_email: string | null; from_status: string | null; to_status: string | null; created_at: string }
+interface Data { entity: Entity; documents: Doc[]; packComplete: boolean; users: Array<{ email: string; full_name: string | null; status: string }>; history: HistoryRow[] }
+
+/** Only the events a reviewer cares about — noise (VIEW, LOGIN, UPLOAD) is hidden. */
+const KEY_ACTIONS = ['SUBMIT', 'RESUBMIT', 'APPROVE', 'REJECT', 'REQUEST_CORRECTION', 'APPROVE_INFO', 'REVOKE_INFO', 'VERIFY_DOCUMENT', 'CREATE'];
+
+const ACTION_LABEL: Record<string, string> = {
+  SUBMIT: 'Submitted for review', RESUBMIT: 'Resubmitted', APPROVE: 'Approved', REJECT: 'Rejected',
+  REQUEST_CORRECTION: 'Correction requested', APPROVE_INFO: 'PE information approved',
+  REVOKE_INFO: 'PE information approval revoked', VERIFY_DOCUMENT: 'Document status updated',
+  CREATE: 'Created / updated',
+};
 
 export default function KycReview() {
   const { entityId } = useParams<{ entityId: string }>();
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState(''); const [notice, setNotice] = useState('');
-  const [remarks, setRemarks] = useState<Record<string, string>>({});
+  const [remarks, setRemarks] = useState('');
   const [docRemarks, setDocRemarks] = useState<Record<string, string>>({});
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
-  async function load() { const r = await api<Data>(`/api/operator/kyc?entityId=${entityId}`); if (!r.ok) setError(r.data.error); else setData(r.data as unknown as Data); }
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [entityId]);
+  async function load() {
+    const r = await api<Data>(`/api/operator/kyc?entityId=${entityId}`);
+    if (!r.ok) setError(r.data.error); else setData(r.data as unknown as Data);
+  }
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [entityId]);
 
   async function setDocStatus(docId: string, status: string) {
     setError(''); setNotice('');
@@ -36,133 +51,174 @@ export default function KycReview() {
   }
   async function approveInfo(approve: boolean) {
     const res = await api('/api/operator/kyc-info', { method: 'POST', body: JSON.stringify({ entityId, approve }) });
-    if (!res.ok) setError(res.data.error ?? 'Failed'); else { setNotice(approve ? 'PE information approved.' : 'PE information marked not approved.'); await load(); }
+    if (!res.ok) setError(res.data.error ?? 'Failed'); else { setNotice(approve ? 'PE information approved.' : 'PE information approval revoked.'); await load(); }
   }
   async function decide(action: string) {
     setBusy(true); setError(''); setNotice('');
-    const res = await api('/api/operator/decision', { method: 'POST', body: JSON.stringify({ module: 'KYC', id: entityId, action, remarks: remarks.KYC ?? '' }) });
+    const res = await api('/api/operator/decision', { method: 'POST', body: JSON.stringify({ module: 'KYC', id: entityId, action, remarks }) });
     setBusy(false);
     if (!res.ok) { setError(res.data.error ?? 'Failed'); return; }
-    setNotice(`KYC ${action.toLowerCase().replace('_', ' ')} recorded.`); await load();
+    setNotice(`KYC ${action.toLowerCase().replace('_', ' ')} recorded.`); setRemarks(''); await load();
   }
 
   if (error && !data) return <ErrorBox message={error} />;
   if (!data) return <Loader />;
+
   const e = data.entity;
   const byType = new Map(data.documents.map((d) => [d.doc_type, d]));
-  // DRAFT / CLARIFICATION_REQUIRED / REJECTED means the PE has not (re)submitted.
+  const verifiedCount = data.documents.filter((d) => d.status === 'VERIFIED').length;
   const notSubmitted = ['DRAFT', 'CLARIFICATION_REQUIRED', 'REJECTED'].includes(String(e.kyc_status));
+  const canApprove = !notSubmitted && data.packComplete && e.kyc_info_approved;
+
+  // Key history only; the full trail stays one click away.
+  const keyHistory = data.history.filter((h) => KEY_ACTIONS.includes(h.action));
+  const shown = (showAll ? keyHistory : keyHistory.slice(0, 5));
 
   return (
     <div>
-      <PageHeader title={`KYC Review — ${e.legal_entity_name}`} subtitle="Left: submitted PE details · Right: document viewer and verification" actions={<a className="btn-ghost" href="/operator/kyc">← Queue</a>} />
+      <PageHeader
+        title={`KYC Review — ${e.legal_entity_name}`}
+        breadcrumb={<a className="font-semibold text-blue-700 hover:underline" href="/operator/kyc">← Back to KYC queue</a>}
+        subtitle={`${String(e.entity_code ?? '')} · ${String(e.entity_type ?? '')} · ${verifiedCount}/4 documents verified`}
+        actions={<StatusPill status={String(e.kyc_status)} className="text-xs" />}
+      />
       <ErrorBox message={error} /><Notice message={notice} />
-      <div className="grid gap-5 lg:grid-cols-2">
-        {/* LEFT: PE details */}
-        <div className="space-y-4">
+
+      {notSubmitted && (
+        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>Not submitted yet.</strong> The pack is in <strong>{String(e.kyc_status).replace(/_/g, ' ')}</strong>. It becomes
+          approvable once the Principal Entity presses <strong>Submit KYC for review</strong> on <code className="rounded bg-amber-100 px-1">/pe/kyc</code>.
+        </div>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-5">
+        {/* LEFT: entity details */}
+        <div className="space-y-5 lg:col-span-2">
           <Card>
-            <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Submitted PE details</h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Submitted PE details</h2>
+              <span className="font-mono text-xs font-bold text-blue-700">{String(e.entity_code ?? '—')}</span>
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              <KeyVal label="PE ID" value={<span className="font-mono font-semibold brand-text">{String(e.entity_code ?? '—')}</span>} />
               <KeyVal label="Legal entity name" value={String(e.legal_entity_name)} />
-              <KeyVal label="Entity type" value={String(e.entity_type)} />
+              <KeyVal label="Entity type" value={String(e.entity_type ?? '—')} />
               <KeyVal label="Trade licence" value={String(e.trade_licence_number ?? '—')} />
               <KeyVal label="Licence authority" value={String(e.trade_licence_authority ?? '—')} />
               <KeyVal label="VAT TRN" value={String(e.vat_trn ?? '—')} />
               <KeyVal label="Emirate / City" value={`${e.emirate ?? '—'} / ${e.city ?? '—'}`} />
               <KeyVal label="Industry" value={String(e.industry ?? '—')} />
-              <KeyVal label="Signatory" value={`${e.signatory_name ?? '—'} (${e.signatory_designation ?? '—'})`} />
-              <KeyVal label="Official email" value={String(e.official_email ?? '—')} />
+              <KeyVal label="Signatory" value={`${e.signatory_name ?? '—'}`} />
+              <KeyVal label="Designation" value={String(e.signatory_designation ?? '—')} />
               <KeyVal label="Mobile" value={String(e.mobile ?? '—')} />
+              <div className="col-span-2"><KeyVal label="Official email" value={String(e.official_email ?? '—')} /></div>
               <div className="col-span-2"><KeyVal label="Registered address" value={String(e.registered_address ?? '—')} /></div>
-              <div className="col-span-2"><KeyVal label="Business description" value={String(e.business_description ?? '—')} /></div>
             </div>
-            <div className="mt-4 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-              <span className="text-sm">PE information approved</span>
-              <div className="flex items-center gap-2">
-                <StatusPill status={e.kyc_info_approved ? 'APPROVED' : 'PENDING_VERIFICATION'} />
-                <button className="btn-ghost" onClick={() => approveInfo(!e.kyc_info_approved)}>{e.kyc_info_approved ? 'Revoke' : 'Approve info'}</button>
-              </div>
+
+            <div className="mt-5 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+              <span className="text-sm">
+                <span className="font-semibold text-slate-700">PE information</span>
+                <span className="ml-2"><StatusPill status={e.kyc_info_approved ? 'APPROVED' : 'PENDING_VERIFICATION'} /></span>
+              </span>
+              <button className="btn-ghost btn-sm" onClick={() => approveInfo(!e.kyc_info_approved)}>
+                {e.kyc_info_approved ? 'Revoke' : 'Approve info'}
+              </button>
             </div>
           </Card>
 
           <Card>
-            <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Users on this entity</h2>
-            <ul className="space-y-1 text-sm">{data.users.map((u) => <li key={u.email}>{u.email} · {u.full_name} · <StatusPill status={u.status} /></li>)}</ul>
+            <h2 className="mb-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Key history</h2>
+            {shown.length === 0 ? <Empty>No decisions recorded yet.</Empty> : (
+              <ol className="space-y-3">
+                {shown.map((h) => (
+                  <li key={h.id} className="flex gap-3">
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-400" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-slate-800">{ACTION_LABEL[h.action] ?? h.action.replace(/_/g, ' ')}</span>
+                      <span className="block text-xs text-slate-500">
+                        {h.actor_name ?? h.actor_email ?? 'System'} · {new Date(h.created_at).toLocaleString()}
+                      </span>
+                      {h.remarks && <span className="mt-0.5 block text-xs text-slate-600">“{h.remarks}”</span>}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+            {keyHistory.length > 5 && (
+              <button className="mt-3 text-xs font-semibold text-blue-700 hover:underline" onClick={() => setShowAll((v) => !v)}>
+                {showAll ? 'Show less' : `Show all ${keyHistory.length} key events`}
+              </button>
+            )}
           </Card>
 
           <Card>
-            <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Decision</h2>
-            <textarea className="input min-h-[70px]" placeholder="Remarks (required for rejection / correction)" value={remarks.KYC ?? ''} onChange={(ev) => setRemarks({ ...remarks, KYC: ev.target.value })} />
+            <h2 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Decision</h2>
+            <textarea className="input min-h-[80px]" placeholder="Remarks — required for rejection and correction requests" value={remarks} onChange={(ev) => setRemarks(ev.target.value)} />
             <div className="mt-3 flex flex-wrap gap-2">
-              <button className="btn-success" disabled={busy || !data.packComplete || !e.kyc_info_approved || notSubmitted} onClick={() => decide('APPROVE')}>Approve KYC</button>
+              <button className="btn-success" disabled={busy || !canApprove} onClick={() => decide('APPROVE')}>Approve KYC</button>
               <button className="btn-ghost" disabled={busy || notSubmitted} onClick={() => decide('REQUEST_CORRECTION')}>Request correction</button>
               <button className="btn-danger" disabled={busy || notSubmitted} onClick={() => decide('REJECT')}>Reject</button>
             </div>
-            {notSubmitted && (
-              <p className="mt-2 text-xs text-amber-700">
-                <strong>Not submitted yet.</strong> This pack is in status <strong>{String(e.kyc_status).replace(/_/g, ' ')}</strong>. It moves to
-                <strong> Submitted</strong> only when the Principal Entity presses <strong>Submit KYC for review</strong> on their
-                <code className="mx-1 rounded bg-amber-100 px-1">/pe/kyc</code> page — an unsubmitted pack cannot be approved, rejected or returned.
-              </p>
-            )}
-            {!notSubmitted && (!data.packComplete || !e.kyc_info_approved) && <p className="mt-2 text-xs text-amber-700">Approval is blocked until all four documents are verified and the PE information is approved.</p>}
+            {!notSubmitted && !data.packComplete && <p className="mt-2 text-xs text-amber-700">All four documents must be verified before approving.</p>}
+            {!notSubmitted && data.packComplete && !e.kyc_info_approved && <p className="mt-2 text-xs text-amber-700">Approve the PE information above before approving KYC.</p>}
           </Card>
         </div>
 
-        {/* RIGHT: document viewer */}
-        <div className="space-y-4">
-          <Card>
-            <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Document viewer</h2>
+        {/* RIGHT: document viewer + verification */}
+        <div className="space-y-5 lg:col-span-3">
+          <Card className="p-0">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+              <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Document preview</h2>
+              {preview && <button className="text-xs font-semibold text-rose-600 hover:underline" onClick={() => setPreview(null)}>Close</button>}
+            </div>
             {preview ? (
               <div>
-                <div className="mb-2 flex items-center justify-between text-xs text-slate-500"><span>{preview.name}</span><button className="text-rose-600" onClick={() => setPreview(null)}>Close</button></div>
-                <div className="max-h-[420px] overflow-auto rounded-lg border border-slate-200 bg-slate-50">
+                <div className="bg-slate-50 px-5 py-2 text-xs text-slate-500">{preview.name}</div>
+                <div className="max-h-[520px] overflow-auto bg-slate-100 p-3">
                   {preview.type === 'pdf'
+                    ? <iframe title="preview" src={preview.url} className="h-[500px] w-full rounded-lg border border-slate-200 bg-white" />
                     // eslint-disable-next-line @next/next/no-img-element
-                    ? <iframe title="preview" src={preview.url} className="h-[400px] w-full" />
-                    // eslint-disable-next-line @next/next/no-img-element
-                    : <img src={preview.url} alt="preview" className="w-full" />}
+                    : <img src={preview.url} alt="preview" className="mx-auto max-h-[500px] rounded-lg border border-slate-200 bg-white" />}
                 </div>
               </div>
-            ) : <p className="text-sm text-slate-400">Open a document below to preview it here.</p>}
+            ) : (
+              <div className="px-5 py-10 text-center text-sm text-slate-400">Select <strong>Preview</strong> on a document below.</div>
+            )}
           </Card>
 
-          <Card>
-            <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Mandatory documents</h2>
-            <div className="space-y-3">
+          <Card className="p-0">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+              <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Mandatory documents</h2>
+              <span className={`text-xs font-semibold ${verifiedCount === 4 ? 'text-emerald-600' : 'text-amber-700'}`}>{verifiedCount}/4 verified</span>
+            </div>
+            <div className="divide-y divide-slate-100">
               {MANDATORY_DOC_TYPES.map((t) => {
                 const d = byType.get(t);
                 return (
-                  <div key={t} className="rounded-lg border border-slate-200 p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-semibold">{DOC_TYPE_LABELS[t]}</div>
-                        <div className="text-xs text-slate-400">{d ? d.file_name : 'Not uploaded'}</div>
+                  <div key={t} className="px-5 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-slate-800">{DOC_TYPE_LABELS[t]}</div>
+                        <div className="truncate text-xs text-slate-400">{d ? d.file_name : 'Not uploaded'}</div>
                       </div>
-                      <StatusPill status={d?.status ?? 'NOT_STARTED'} />
+                      <div className="flex items-center gap-2">
+                        <StatusPill status={d?.status ?? 'NOT_STARTED'} />
+                        {d && <button className="btn-ghost btn-sm" onClick={() => openDoc(d.id)}>Preview</button>}
+                      </div>
                     </div>
-                    {d?.remarks && <p className="mt-2 text-xs text-amber-700">{d.remarks}</p>}
+                    {d?.remarks && <p className="mt-2 rounded bg-amber-50 px-3 py-1.5 text-xs text-amber-800">{d.remarks}</p>}
                     {d ? (
                       <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <button className="btn-ghost" onClick={() => openDoc(d.id)}>Preview</button>
-                        <select className="input max-w-[190px]" value={d.status} onChange={(ev) => setDocStatus(d.id, ev.target.value)}>
+                        <select className="input max-w-[210px]" value={d.status} onChange={(ev) => setDocStatus(d.id, ev.target.value)}>
                           {DOC_STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
                         </select>
-                        <input className="input max-w-[220px]" placeholder="Remarks (for reject/resubmit)" value={docRemarks[d.id] ?? d.remarks ?? ''} onChange={(ev) => setDocRemarks({ ...docRemarks, [d.id]: ev.target.value })} />
+                        <input className="input max-w-[260px]" placeholder="Remarks (for reject / resubmit)"
+                          value={docRemarks[d.id] ?? d.remarks ?? ''} onChange={(ev) => setDocRemarks({ ...docRemarks, [d.id]: ev.target.value })} />
                       </div>
                     ) : <p className="mt-2 text-xs text-amber-700">Missing — the PE must upload this document.</p>}
                   </div>
                 );
               })}
             </div>
-          </Card>
-
-          <Card>
-            <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">History</h2>
-            <ul className="space-y-2 text-xs">{data.history.map((h) => (
-              <li key={h.id} className="border-b border-slate-100 pb-2"><span className="font-semibold">{h.action}</span> · {h.actor_email ?? 'system'} · {new Date(h.created_at).toLocaleString()}{h.remarks ? ` — ${h.remarks}` : ''}</li>
-            ))}</ul>
           </Card>
         </div>
       </div>

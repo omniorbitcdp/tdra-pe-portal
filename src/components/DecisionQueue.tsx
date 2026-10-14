@@ -100,7 +100,7 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
           <div className="flex flex-wrap items-center gap-2 px-5 pt-4">
             {VIEWS.map((v) => (
               <button key={v.key} onClick={() => setView(v.key)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${view === v.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${view === v.key ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                 {v.label}
               </button>
             ))}

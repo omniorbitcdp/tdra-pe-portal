@@ -4,7 +4,7 @@
 
 :root { --brand: #345dff; }
 html, body { height: 100%; }
-body { @apply bg-slate-100 text-slate-800 antialiased; }
+body { @apply bg-slate-50 text-slate-800 antialiased; }
 
 .brand-bg { background-color: var(--brand); }
 .brand-text { color: var(--brand); }
@@ -14,8 +14,8 @@ body { @apply bg-slate-100 text-slate-800 antialiased; }
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50; }
   .btn-primary { @apply btn text-white shadow-sm hover:brightness-110 active:brightness-95; background-color: var(--brand); }
   .btn-ghost { @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400; }
-  .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700; }
-  .btn-success { @apply btn bg-emerald-600 text-white hover:bg-emerald-700; }
+  .btn-danger { @apply btn border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100; }
+  .btn-success { @apply btn border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100; }
   .btn-sm { @apply px-2.5 py-1.5 text-xs; }
 
   .card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
@@ -26,7 +26,7 @@ body { @apply bg-slate-100 text-slate-800 antialiased; }
   .pill { @apply inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold; }
 
   .table { @apply w-full border-collapse; }
-  .thead-row { @apply bg-slate-50; }
+  .thead-row { @apply bg-slate-50/80; }
   .th { @apply whitespace-nowrap px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500; }
   .td { @apply px-3 py-3 text-sm text-slate-700; }
   .tr { @apply border-t border-slate-100 transition hover:bg-slate-50/70; }
