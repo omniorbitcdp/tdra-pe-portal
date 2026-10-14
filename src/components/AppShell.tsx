@@ -92,7 +92,7 @@ export async function AppShell({ modules = [], children }: AppShellProps) {
       </main>
 
       <footer className="mx-auto max-w-[1500px] px-5 pb-8 pt-2 text-center text-[11px] text-slate-400">
-        Onextel Copyright 2026
+        © Onextel Copyright 2026
       </footer>
     </div>
   );
