@@ -91,6 +91,35 @@ export const templateSchema = z.object({
   }
 });
 
+export const grievanceSchema = z.object({
+  reported_header: z.string().trim().min(2, 'Enter the header / sender ID the message came from').max(120),
+  message_content: z.string().trim().min(5, 'Paste the message you received').max(4000),
+  highlighted_url: z.string().trim().max(500).optional().or(z.literal('')),
+  highlighted_phone: z.string().trim().max(30).optional().or(z.literal('')),
+  category: z.enum(['FRAUD', 'PHISHING', 'SPAM', 'UNSOLICITED', 'OTHER']).default('FRAUD'),
+  description: z.string().trim().max(2000).optional().or(z.literal('')),
+  subscriber_name: z.string().trim().max(120).optional().or(z.literal('')),
+  subscriber_email: z.string().trim().email('Enter a valid e-mail address').optional().or(z.literal('')),
+  subscriber_mobile: z.string().trim().min(7, 'Enter the mobile number you want to track with').max(20)
+    .regex(/^[+0-9][0-9\s\-()]{6,19}$/, 'Enter a valid mobile number'),
+}).superRefine((v, ctx) => {
+  if (v.highlighted_url) {
+    try { new URL(v.highlighted_url); } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['highlighted_url'], message: 'Enter a full URL starting with http:// or https://' });
+    }
+  }
+});
+
+export const grievanceTrackSchema = z.object({
+  grievanceId: z.string().trim().min(3, 'Enter your grievance ID'),
+  contact: z.string().trim().min(5, 'Enter the mobile number or e-mail you filed with'),
+});
+
+export const grievanceActionSchema = z.object({
+  action: z.enum(['ACKNOWLEDGE', 'RESOLVE', 'REJECT', 'CLOSE']),
+  remarks: z.string().trim().max(2000).optional().or(z.literal('')),
+});
+
 export const urlSchema = z.object({
   template_id: z.string().uuid('Select an approved template'),
   url: z.string().trim().url('Enter a valid URL'),

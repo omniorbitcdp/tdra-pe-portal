@@ -11,6 +11,9 @@ export interface PlatformSettings {
   allowedKycMime: string[];
   retentionDays: Record<string, number>;
   emailNotificationsEnabled: boolean;
+  /** Hours an enterprise has to resolve a subscriber grievance. */
+  grievanceSlaHours: number;
+  maxGrievanceFileMb: number;
 }
 
 export const DEFAULT_SETTINGS: PlatformSettings = {
@@ -22,6 +25,8 @@ export const DEFAULT_SETTINGS: PlatformSettings = {
   allowedKycMime: [...KYC_ALLOWED_MIME],
   retentionDays: { pe_profile: 2555, kyc_documents: 2555, audit_log: 2555, notification_log: 365 },
   emailNotificationsEnabled: true,
+  grievanceSlaHours: 48,
+  maxGrievanceFileMb: 5,
 };
 
 /**
@@ -55,6 +60,8 @@ export async function getSettings(): Promise<PlatformSettings> {
       allowedKycMime: val('allowed_kyc_mime', DEFAULT_SETTINGS.allowedKycMime),
       retentionDays: val('retention_days', DEFAULT_SETTINGS.retentionDays),
       emailNotificationsEnabled: val('email_notifications_enabled', DEFAULT_SETTINGS.emailNotificationsEnabled),
+      grievanceSlaHours: val('grievance_sla_hours', DEFAULT_SETTINGS.grievanceSlaHours),
+      maxGrievanceFileMb: val('max_grievance_file_mb', DEFAULT_SETTINGS.maxGrievanceFileMb),
     };
     cached = { value, at: Date.now() };
     return value;

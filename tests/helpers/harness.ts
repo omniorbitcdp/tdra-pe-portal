@@ -47,7 +47,7 @@ export function makeRequest(path: string, opts: { method?: string; body?: unknow
   const url = new URL(path, 'http://localhost');
   const self = {
     url: url.toString(),
-    headers: new Headers({ 'x-forwarded-for': '10.0.0.1' }),
+    headers: new Headers({ 'x-forwarded-for': '10.0.0.1', ...(opts.form ? { 'content-type': 'multipart/form-data' } : {}) }),
     async json() { return opts.body ?? {}; },
     async formData() { return opts.form ?? new FormData(); },
   } as FakeRequest;

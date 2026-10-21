@@ -26,6 +26,9 @@ const PE_NAV: NavGroup[] = [{
     { label: 'Templates', href: '/pe/templates', icon: 'template' },
     { label: 'URLs', href: '/pe/urls', icon: 'url' },
   ],
+}, {
+  title: 'Subscriber care',
+  items: [{ label: 'Grievances', href: '/pe/grievances', icon: 'bell' }],
 }];
 
 const QUEUE_ITEMS: Record<string, NavItem> = {
@@ -69,6 +72,7 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { label: 'Audit Trail', href: '/admin/audit', icon: 'audit' },
       { label: 'Notifications Log', href: '/admin/notifications', icon: 'bell' },
+      { label: 'Grievances', href: '/admin/grievances', icon: 'bell' },
     ],
   },
 ];

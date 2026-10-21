@@ -1,0 +1,297 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { api, apiForm } from '@/lib/client';
+import { StatusPill } from '@/components/ui';
+import { GRIEVANCE_CATEGORIES, GRIEVANCE_CATEGORY_LABELS, type GrievanceCategory } from '@/lib/grievance';
+
+type Tab = 'raise' | 'track';
+
+interface TrackResult {
+  grievance_code: string; status: string; category: string; reported_header: string;
+  message_content: string; highlighted_url: string | null; highlighted_phone: string | null;
+  created_at: string; sla_due_at: string; acknowledged_at: string | null; resolved_at: string | null;
+  resolution_remarks: string | null; enterprise: string | null; matched: boolean;
+  overdue: boolean; hours_remaining: number | null; reporter: string;
+  attachment_url: string | null; attachment_name: string | null;
+  timeline: Array<{ at: string | null; label: string; done: boolean }>;
+}
+
+const EMPTY = {
+  reported_header: '', message_content: '', category: 'FRAUD' as GrievanceCategory,
+  highlighted_url: '', highlighted_phone: '', description: '',
+  subscriber_name: '', subscriber_email: '', subscriber_mobile: '',
+};
+
+export function GrievancePortal({ initialTab, slaHours, maxFileMb }: { initialTab: Tab; slaHours: number; maxFileMb: number }) {
+  const [tab, setTab] = useState<Tab>(initialTab);
+
+  return (
+    <div className="mx-auto max-w-4xl">
+      <div className="text-center">
+        <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-800 ring-1 ring-amber-200">
+          Subscriber grievance redressal
+        </span>
+        <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900">Report an SMS you did not expect</h1>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
+          If you received fraudulent, spam or unsolicited commercial SMS, tell us which header it came from.
+          The grievance goes straight to the business that owns that sender ID{` `}
+          and is monitored by the platform administrator. Resolution target: <strong>{slaHours} hours</strong>.
+        </p>
+      </div>
+
+      <div className="mx-auto mt-7 grid max-w-md grid-cols-2 gap-1 rounded-xl bg-slate-200/70 p-1">
+        {([['raise', 'Raise Grievance'], ['track', 'Track Grievance']] as Array<[Tab, string]>).map(([k, label]) => (
+          <button key={k} onClick={() => setTab(k)} aria-pressed={tab === k}
+            className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition ${tab === k ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6">
+        {tab === 'raise' ? <RaiseForm maxFileMb={maxFileMb} onTrack={() => setTab('track')} /> : <TrackForm />}
+      </div>
+    </div>
+  );
+}
+
+function RaiseForm({ maxFileMb, onTrack }: { maxFileMb: number; onTrack: () => void }) {
+  const [form, setForm] = useState({ ...EMPTY });
+  const [file, setFile] = useState<File | null>(null);
+  const [suggestions, setSuggestions] = useState<Array<{ sender_id: string; header_name: string }>>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<{ code: string; matched: boolean; enterprise: string | null; sla: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const q = form.reported_header.trim();
+    if (q.length < 2) { setSuggestions([]); return; }
+    const t = setTimeout(async () => {
+      const r = await api<{ headers: Array<{ sender_id: string; header_name: string }> }>(`/api/grievances/headers?q=${encodeURIComponent(q)}`);
+      if (r.ok) setSuggestions((r.data as unknown as { headers: [] }).headers ?? []);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [form.reported_header]);
+
+  const set = (k: keyof typeof EMPTY, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true); setErrors({}); setError('');
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(form)) fd.set(k, v);
+    if (file) fd.set('attachment', file);
+
+    const res = await apiForm<{ grievance: { grievance_code: string; sla_due_at: string }; matched: boolean; enterprise: string | null }>('/api/grievances', fd);
+    setBusy(false);
+    if (!res.ok) { setErrors(res.data.errors ?? {}); setError(res.data.error ?? 'Could not submit the grievance'); return; }
+    const d = res.data as unknown as { grievance: { grievance_code: string; sla_due_at: string }; matched: boolean; enterprise: string | null };
+    setDone({ code: d.grievance.grievance_code, matched: d.matched, enterprise: d.enterprise, sla: d.grievance.sla_due_at });
+  }
+
+  if (done) {
+    return (
+      <div className="card p-7 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">✓</div>
+        <h2 className="mt-4 text-xl font-bold text-slate-900">Grievance registered</h2>
+        <p className="mt-1 text-sm text-slate-500">Keep this reference — you need it to track progress.</p>
+        <div className="mx-auto mt-5 flex max-w-sm items-center justify-between gap-3 rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/60 px-5 py-4">
+          <span className="font-mono text-xl font-bold tracking-wider text-blue-800">{done.code}</span>
+          <button type="button" className="btn-ghost btn-sm"
+            onClick={() => { navigator.clipboard?.writeText(done.code); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+        <p className="mt-4 text-sm text-slate-600">
+          {done.matched
+            ? <>Routed to <strong>{done.enterprise}</strong> — the owner of that header.</>
+            : <>No registered header matched, so this has gone to the platform administrator for review.</>}
+        </p>
+        <p className="mt-1 text-xs text-slate-500">Target response by {new Date(done.sla).toLocaleString()}.</p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <button className="btn-primary" onClick={onTrack}>Track this grievance</button>
+          <a className="btn-ghost" href="/grievance">Raise another</a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="card space-y-5 p-6">
+      <div>
+        <h2 className="text-lg font-bold text-slate-900">What did you receive?</h2>
+        <p className="mt-1 text-xs text-slate-500">All fields marked * are required. Your number is only used to look the grievance up.</p>
+      </div>
+
+      {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="md:col-span-2">
+          <label className="label">Header / sender ID the message came from *</label>
+          <input className="input" placeholder="e.g. ALPHA or Onextel official header" list="grievance-headers"
+            value={form.reported_header} onChange={(e) => set('reported_header', e.target.value)} required />
+          <datalist id="grievance-headers">
+            {suggestions.map((s) => <option key={s.sender_id} value={s.sender_id}>{s.header_name}</option>)}
+          </datalist>
+          {suggestions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {suggestions.map((s) => (
+                <button type="button" key={s.sender_id} onClick={() => set('reported_header', s.sender_id)}
+                  className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-200">
+                  {s.sender_id} · {s.header_name}
+                </button>
+              ))}
+            </div>
+          )}
+          {errors.reported_header && <p className="mt-1 text-xs text-rose-600">{errors.reported_header}</p>}
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="label">Message content you received *</label>
+          <textarea className="input min-h-[100px]" placeholder="Paste the SMS exactly as it arrived…"
+            value={form.message_content} onChange={(e) => set('message_content', e.target.value)} required />
+          {errors.message_content && <p className="mt-1 text-xs text-rose-600">{errors.message_content}</p>}
+        </div>
+
+        <div>
+          <label className="label">Type of grievance</label>
+          <select className="input" value={form.category} onChange={(e) => set('category', e.target.value)}>
+            {GRIEVANCE_CATEGORIES.map((c) => <option key={c} value={c}>{GRIEVANCE_CATEGORY_LABELS[c]}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label className="label">Suspicious URL in the message</label>
+          <input className="input" placeholder="https://suspicious-link.example" value={form.highlighted_url}
+            onChange={(e) => set('highlighted_url', e.target.value)} />
+          {errors.highlighted_url && <p className="mt-1 text-xs text-rose-600">{errors.highlighted_url}</p>}
+        </div>
+
+        <div>
+          <label className="label">Phone number it came from / asked you to call</label>
+          <input className="input" placeholder="+9715xxxxxxxx" value={form.highlighted_phone}
+            onChange={(e) => set('highlighted_phone', e.target.value)} />
+        </div>
+
+        <div>
+          <label className="label">Screenshot of the message</label>
+          <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" className="input file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-blue-700"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <p className="mt-1 text-[11px] text-slate-500">JPG, PNG, WEBP or PDF · up to {maxFileMb} MB</p>
+          {errors.attachment && <p className="mt-1 text-xs text-rose-600">{errors.attachment}</p>}
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="label">Anything else we should know</label>
+          <textarea className="input min-h-[70px]" placeholder="Optional — what happened, how often, any loss…"
+            value={form.description} onChange={(e) => set('description', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+        <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Your contact details</div>
+        <div className="mt-3 grid gap-4 md:grid-cols-3">
+          <div><label className="label">Name</label><input className="input" value={form.subscriber_name} onChange={(e) => set('subscriber_name', e.target.value)} /></div>
+          <div><label className="label">Mobile number *</label><input className="input" placeholder="+9715xxxxxxxx" value={form.subscriber_mobile} onChange={(e) => set('subscriber_mobile', e.target.value)} required />{errors.subscriber_mobile && <p className="mt-1 text-xs text-rose-600">{errors.subscriber_mobile}</p>}</div>
+          <div><label className="label">E-mail</label><input type="email" className="input" value={form.subscriber_email} onChange={(e) => set('subscriber_email', e.target.value)} />{errors.subscriber_email && <p className="mt-1 text-xs text-rose-600">{errors.subscriber_email}</p>}</div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[11px] text-slate-500">Submitting creates a unique grievance ID you can track.</p>
+        <button className="btn-primary" disabled={busy}>{busy ? 'Submitting…' : 'Submit grievance'}</button>
+      </div>
+    </form>
+  );
+}
+
+function TrackForm() {
+  const [id, setId] = useState(''); const [contact, setContact] = useState('');
+  const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const [r, setR] = useState<TrackResult | null>(null);
+
+  async function lookup(e: React.FormEvent) {
+    e.preventDefault(); if (busy) return;
+    setBusy(true); setError(''); setR(null);
+    const res = await api<{ grievance: TrackResult }>(`/api/grievances/track?grievanceId=${encodeURIComponent(id.trim())}&contact=${encodeURIComponent(contact.trim())}`);
+    setBusy(false);
+    if (!res.ok) { setError(res.data.error ?? 'Lookup failed'); return; }
+    setR((res.data as unknown as { grievance: TrackResult }).grievance);
+  }
+
+  return (
+    <div className="space-y-5">
+      <form onSubmit={lookup} className="card space-y-4 p-6">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Track your grievance</h2>
+          <p className="mt-1 text-xs text-slate-500">Enter the grievance ID you were given and the mobile number or e-mail you filed with.</p>
+        </div>
+        {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+        <div className="grid gap-4 md:grid-cols-2">
+          <div><label className="label">Grievance ID</label><input className="input font-mono" placeholder="GRV-12345678" value={id} onChange={(e) => setId(e.target.value)} required /></div>
+          <div><label className="label">Mobile or e-mail used</label><input className="input" placeholder="+9715xxxxxxxx" value={contact} onChange={(e) => setContact(e.target.value)} required /></div>
+        </div>
+        <button className="btn-primary" disabled={busy}>{busy ? 'Looking up…' : 'Check status'}</button>
+      </form>
+
+      {r && <TrackResultCard r={r} contact={contact} />}
+    </div>
+  );
+}
+
+function TrackResultCard({ r, contact }: { r: TrackResult; contact: string }) {
+  return (
+    <div className="card p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="font-mono text-lg font-bold tracking-wide text-slate-900">{r.grievance_code}</div>
+          <div className="mt-1 text-xs text-slate-500">
+            Filed {new Date(r.created_at).toLocaleString()}
+            {r.enterprise ? <> · routed to <strong>{r.enterprise}</strong></> : ' · with the platform administrator'}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <StatusPill status={r.status} />
+          {r.overdue && <span className="pill bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200">SLA lapsed</span>}
+        </div>
+      </div>
+
+      <ol className="mt-6 space-y-4">
+        {r.timeline.map((t) => (
+          <li key={t.label} className="flex gap-3">
+            <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+              t.done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{t.done ? '✓' : '·'}</span>
+            <span>
+              <span className={`block text-sm font-semibold ${t.done ? 'text-slate-800' : 'text-slate-400'}`}>{t.label}</span>
+              {t.at && <span className="block text-[11px] text-slate-500">{new Date(t.at).toLocaleString()}</span>}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      {r.resolution_remarks && (
+        <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3">
+          <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-700">Response from the enterprise</div>
+          <p className="mt-1 text-sm text-slate-800">{r.resolution_remarks}</p>
+        </div>
+      )}
+
+      <dl className="mt-6 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
+        <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Header reported</dt><dd className="text-sm font-medium text-slate-800">{r.reported_header}</dd></div>
+        <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Target resolution</dt><dd className="text-sm text-slate-800">{new Date(r.sla_due_at).toLocaleString()}</dd></div>
+        {r.highlighted_url && <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Suspicious URL</dt><dd className="break-all text-sm text-slate-800">{r.highlighted_url}</dd></div>}
+        {r.highlighted_phone && <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone highlighted</dt><dd className="text-sm text-slate-800">{r.highlighted_phone}</dd></div>}
+        <div className="sm:col-span-2"><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Message you reported</dt><dd className="whitespace-pre-wrap text-sm text-slate-700">{r.message_content}</dd></div>
+        {r.attachment_url && (
+          <div className="sm:col-span-2">
+            <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Your screenshot</dt>
+            <dd className="text-sm"><a className="font-semibold text-blue-700 hover:underline" href={r.attachment_url} target="_blank" rel="noreferrer">{r.attachment_name ?? 'Open attachment'}</a></dd>
+          </div>
+        )}
+      </dl>
+      <p className="mt-4 text-[11px] text-slate-400">Reported by {r.reporter} · contact supplied: {contact.slice(0, 3)}•••</p>
+    </div>
+  );
+}

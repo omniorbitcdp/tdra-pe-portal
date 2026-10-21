@@ -25,8 +25,15 @@ describe('role-scoped navigation', () => {
     expect(admin).toContain('/operator/urls');
   });
 
-  it('maps a PE to the six registration screens', () => {
-    expect(hrefs('PE')).toEqual(['/pe', '/pe/profile', '/pe/kyc', '/pe/headers', '/pe/templates', '/pe/urls']);
+  it('maps a PE to the six registration screens plus subscriber care', () => {
+    const groups = navForRole('PE');
+    const hrefs = groups.flatMap((g) => g.items.map((i) => i.href));
+    for (const h of ['/pe', '/pe/profile', '/pe/kyc', '/pe/headers', '/pe/templates', '/pe/urls']) {
+      expect(hrefs).toContain(h);
+    }
+    expect(hrefs).toContain('/pe/grievances');
+    expect(hrefs).not.toContain('/admin');
+    expect(hrefs).not.toContain('/operator');
   });
 
   it('canAccessPath respects exact vs prefix matches', () => {
