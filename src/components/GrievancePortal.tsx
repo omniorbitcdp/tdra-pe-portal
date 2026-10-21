@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api, apiForm } from '@/lib/client';
 import { StatusPill } from '@/components/ui';
-import { GRIEVANCE_CATEGORIES, GRIEVANCE_CATEGORY_LABELS, type GrievanceCategory } from '@/lib/grievance';
+import { GRIEVANCE_CATEGORIES, GRIEVANCE_CATEGORY_LABELS, GRIEVANCE_STATUS_LABELS, type GrievanceCategory } from '@/lib/grievance';
 
 type Tab = 'raise' | 'track';
 
@@ -13,6 +13,11 @@ interface TrackResult {
   resolution_remarks: string | null; enterprise: string | null; matched: boolean;
   overdue: boolean; hours_remaining: number | null; reporter: string;
   attachment_url: string | null; attachment_name: string | null;
+  escalated_at: string | null; escalation_reason: string | null;
+  returned_at: string | null; return_reason: string | null;
+  reopened_at: string | null; reopen_reason: string | null; reopen_count: number;
+  closed_at: string | null;
+  can_reopen: boolean; can_escalate: boolean;
   timeline: Array<{ at: string | null; label: string; done: boolean }>;
 }
 
@@ -257,12 +262,12 @@ function TrackForm() {
         </div>
       </form>
 
-      {r && <TrackResultCard r={r} contact={contact} />}
+      {r && <TrackResultCard r={r} contact={contact} onChanged={() => fetchStatus(true)} />}
     </div>
   );
 }
 
-function TrackResultCard({ r, contact }: { r: TrackResult; contact: string }) {
+function TrackResultCard({ r, contact, onChanged }: { r: TrackResult; contact: string; onChanged: () => Promise<void> }) {
   return (
     <div className="card p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -274,7 +279,7 @@ function TrackResultCard({ r, contact }: { r: TrackResult; contact: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <StatusPill status={r.status} />
+          <StatusPill status={r.status} label={GRIEVANCE_STATUS_LABELS[r.status as keyof typeof GRIEVANCE_STATUS_LABELS] ?? r.status} />
           {r.overdue && <span className="pill bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200">SLA lapsed</span>}
         </div>
       </div>
@@ -292,11 +297,35 @@ function TrackResultCard({ r, contact }: { r: TrackResult; contact: string }) {
         ))}
       </ol>
 
+      {r.escalation_reason && (
+        <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
+          <div className="text-[11px] font-bold uppercase tracking-wide text-indigo-700">Escalated to the platform administrator</div>
+          <p className="mt-1 text-sm text-slate-800">{r.escalation_reason}</p>
+          {r.escalated_at && <p className="mt-1 text-[11px] text-slate-500">{new Date(r.escalated_at).toLocaleString()}</p>}
+        </div>
+      )}
+
+      {r.return_reason && (
+        <div className="mt-5 rounded-lg border border-amber-100 bg-amber-50/60 p-3">
+          <div className="text-[11px] font-bold uppercase tracking-wide text-amber-800">Returned to the enterprise for justification</div>
+          <p className="mt-1 text-sm text-slate-800">{r.return_reason}</p>
+          {r.returned_at && <p className="mt-1 text-[11px] text-slate-500">{new Date(r.returned_at).toLocaleString()}</p>}
+        </div>
+      )}
+
       {r.resolution_remarks && (
         <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3">
           <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-700">Response from the enterprise</div>
           <p className="mt-1 text-sm text-slate-800">{r.resolution_remarks}</p>
         </div>
+      )}
+
+      {(r.reopen_count > 0 || r.reopened_at) && (
+        <p className="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900">
+          Re-opened {r.reopen_count === 1 ? 'once' : `${r.reopen_count} times`}
+          {r.reopened_at ? ` — latest on ${new Date(r.reopened_at).toLocaleString()}` : ''}.
+          {r.reopen_reason ? ` Reason given: ${r.reopen_reason}` : ''}
+        </p>
       )}
 
       <dl className="mt-6 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
@@ -312,7 +341,67 @@ function TrackResultCard({ r, contact }: { r: TrackResult; contact: string }) {
           </div>
         )}
       </dl>
+      {(r.can_reopen || r.can_escalate) && <ReporterActions r={r} contact={contact} onChanged={onChanged} />}
+
       <p className="mt-4 text-[11px] text-slate-400">Reported by {r.reporter} · contact supplied: {contact.slice(0, 3)}•••</p>
+    </div>
+  );
+}
+
+/** Re-open or escalate a concluded grievance — the reporter's own remedy. */
+function ReporterActions({ r, contact, onChanged }: { r: TrackResult; contact: string; onChanged: () => Promise<void> }) {
+  const [choice, setChoice] = useState<'' | 'REOPEN' | 'ESCALATE'>('');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState('');
+
+  async function submit(action: 'REOPEN' | 'ESCALATE') {
+    if (busy) return;
+    if (reason.trim().length < 5) { setError('Tell us briefly why (at least 5 characters).'); return; }
+    setBusy(true); setError('');
+    const res = await api('/api/grievances/reopen', {
+      method: 'POST',
+      body: JSON.stringify({ grievanceId: r.grievance_code, contact, action, reason: reason.trim() }),
+    });
+    setBusy(false);
+    if (!res.ok) { setError((res.data as { error?: string }).error ?? 'Could not update the grievance.'); return; }
+    setDone(action === 'REOPEN'
+      ? 'Re-opened. The enterprise has been notified and must respond again.'
+      : 'Escalated. The platform administrator now has your grievance.');
+    setChoice(''); setReason('');
+    await onChanged();
+  }
+
+  return (
+    <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+      <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Not satisfied with the outcome?</div>
+      <p className="mt-1 text-xs text-slate-600">
+        You can send this back to the enterprise for another look, or escalate it to the platform administrator.
+      </p>
+
+      {done && <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">{done}</div>}
+      {error && <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div>}
+
+      {choice === '' ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {r.can_reopen && <button className="btn-ghost btn-sm" onClick={() => { setChoice('REOPEN'); setDone(''); }}>Re-open grievance</button>}
+          {r.can_escalate && <button className="btn-primary btn-sm" onClick={() => { setChoice('ESCALATE'); setDone(''); }}>Escalate to the platform administrator</button>}
+        </div>
+      ) : (
+        <div className="mt-3 space-y-2">
+          <label className="label">{choice === 'REOPEN' ? 'Why should this be re-opened?' : 'Why are you escalating?'}</label>
+          <textarea className="input min-h-[70px]" value={reason} onChange={(e) => setReason(e.target.value)}
+            placeholder={choice === 'REOPEN' ? 'The problem is still happening / the response did not address it…' : 'Explain why the enterprise response is unsatisfactory…'} />
+          <div className="flex flex-wrap items-center gap-2">
+            <button className={choice === 'REOPEN' ? 'btn-ghost btn-sm' : 'btn-primary btn-sm'} disabled={busy}
+              onClick={() => void submit(choice)}>
+              {busy ? 'Sending…' : choice === 'REOPEN' ? 'Confirm re-open' : 'Confirm escalation'}
+            </button>
+            <button className="btn-ghost btn-sm" disabled={busy} onClick={() => { setChoice(''); setError(''); }}>Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

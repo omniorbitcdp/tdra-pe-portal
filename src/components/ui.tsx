@@ -40,6 +40,10 @@ const STATUS_STYLES: Record<string, string> = {
   RESUBMITTED: 'bg-sky-50 text-sky-700 ring-sky-200',
   APPROVED: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
   REJECTED: 'bg-rose-50 text-rose-700 ring-rose-200',
+  ESCALATED: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+  RETURNED_TO_PE: 'bg-amber-50 text-amber-800 ring-amber-200',
+  REOPENED: 'bg-sky-50 text-sky-700 ring-sky-200',
+  CLOSED: 'bg-slate-100 text-slate-600 ring-slate-200',
   PENDING_VERIFICATION: 'bg-slate-100 text-slate-600 ring-slate-200',
   VERIFIED: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
   RESUBMISSION_REQUIRED: 'bg-amber-50 text-amber-800 ring-amber-200',
@@ -53,9 +57,9 @@ const STATUS_STYLES: Record<string, string> = {
   NOT_STARTED: 'bg-slate-100 text-slate-500 ring-slate-200',
 };
 
-export function StatusPill({ status, className = '' }: { status: string; className?: string }) {
+export function StatusPill({ status, label, className = '' }: { status: string; label?: string; className?: string }) {
   const cls = STATUS_STYLES[status] ?? 'bg-slate-100 text-slate-600 ring-slate-200';
-  return <span className={`pill ring-1 ring-inset ${cls} ${className}`}>{status.replace(/_/g, ' ')}</span>;
+  return <span className={`pill ring-1 ring-inset ${cls} ${className}`}>{label ?? status.replace(/_/g, ' ')}</span>;
 }
 
 export function Empty({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {

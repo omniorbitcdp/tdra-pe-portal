@@ -116,7 +116,7 @@ export const grievanceTrackSchema = z.object({
 });
 
 export const grievanceActionSchema = z.object({
-  action: z.enum(['ACKNOWLEDGE', 'RESOLVE', 'REJECT', 'CLOSE']),
+  action: z.enum(['ACKNOWLEDGE', 'RESOLVE', 'REJECT', 'CLOSE', 'ESCALATE', 'RETURN_TO_PE', 'REOPEN']),
   remarks: z.string().trim().max(2000).optional().or(z.literal('')),
 });
 

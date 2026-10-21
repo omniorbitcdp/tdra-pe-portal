@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { json, badRequest } from '@/lib/http';
 import { clientIp, rateLimit } from '@/lib/rateLimit';
-import { contactMatches, hoursUntil, isOverdue, maskContact } from '@/lib/grievance';
+import { actionsFor, contactMatches, hoursUntil, isOverdue, maskContact, timelineFor } from '@/lib/grievance';
 import { signedGrievanceUrl } from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
@@ -33,19 +33,8 @@ export async function GET(req: NextRequest) {
 
   const attachmentUrl = g.attachment_path ? await signedGrievanceUrl(g.attachment_path, 300) : null;
 
-  // A stage is complete if the status has moved past it OR its timestamp is
-  // set — so an action taken in one step never leaves a gap in the timeline.
-  const STAGE: Record<string, number> = { SUBMITTED: 0, ACKNOWLEDGED: 1, RESOLVED: 2, REJECTED: 2, CLOSED: 2 };
-  const stage = STAGE[String(g.status)] ?? 0;
-  const timeline = [
-    { at: g.created_at, label: 'Grievance received', done: true },
-    { at: g.acknowledged_at, label: 'Acknowledged by the enterprise', done: stage >= 1 || Boolean(g.acknowledged_at) },
-    {
-      at: g.resolved_at,
-      label: g.status === 'REJECTED' ? 'Declined by the enterprise' : 'Resolved',
-      done: stage >= 2 || Boolean(g.resolved_at),
-    },
-  ];
+  const timeline = timelineFor(g as never);
+  const reporterActions = actionsFor('SUBSCRIBER', g.status);
 
   return json({
     ok: true,
@@ -69,6 +58,16 @@ export async function GET(req: NextRequest) {
       reporter: maskContact(g.subscriber_email || g.subscriber_mobile),
       attachment_url: attachmentUrl,
       attachment_name: g.attachment_name,
+      escalated_at: g.escalated_at ?? null,
+      escalation_reason: g.escalation_reason ?? null,
+      returned_at: g.returned_at ?? null,
+      return_reason: g.return_reason ?? null,
+      reopened_at: g.reopened_at ?? null,
+      reopen_reason: g.reopen_reason ?? null,
+      reopen_count: g.reopen_count ?? 0,
+      closed_at: g.closed_at ?? null,
+      can_reopen: reporterActions.includes('REOPEN'),
+      can_escalate: reporterActions.includes('ESCALATE'),
       timeline,
     },
   });
