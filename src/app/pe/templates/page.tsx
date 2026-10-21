@@ -4,6 +4,7 @@ import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import { extractVariables, insertVariable, nextVariable, renderWithSamples } from '@/lib/templateVars';
+import { isEditable } from '@/lib/constants';
 
 interface Tpl {
   id: string; template_code: string | null; template_name: string; category: string; channel: string;
@@ -20,7 +21,7 @@ export default function TemplatesPage() {
   const [allHeaders, setAllHeaders] = useState<Hdr[]>([]);
   const [form, setForm] = useState({ ...EMPTY });
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(''); const [errors, setErrors] = useState<Record<string, string>>({}); const [notice, setNotice] = useState(''); const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(''); const [errors, setErrors] = useState<Record<string, string>>({}); const [notice, setNotice] = useState(''); const [busy, setBusy] = useState(false); const [busyId, setBusyId] = useState('');
   const [editing, setEditing] = useState<string>('');
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -56,8 +57,10 @@ export default function TemplatesPage() {
     setForm({ ...EMPTY, variable_samples: {} }); setNotice('Template draft created.'); await load();
   }
   async function submit(id: string) {
-    setError(''); setNotice('');
+    if (busyId) return;            // one submission in flight at a time
+    setBusyId(id); setError(''); setNotice('');
     const res = await api('/api/pe/submit', { method: 'POST', body: JSON.stringify({ module: 'TEMPLATE', id }) });
+    setBusyId('');
     if (!res.ok) setError(res.data.error ?? 'Submit failed'); else { setNotice('Template submitted for approval.'); await load(); }
   }
 
@@ -136,14 +139,19 @@ export default function TemplatesPage() {
                     <td className="td">{t.remarks ?? '—'}</td>
                     <td className="td">
                       <div className="flex items-center gap-2">
-                        {(t.variables ?? '').trim() && <button className="btn-ghost btn-sm" onClick={() => setEditing(editing === t.id ? '' : t.id)}>{editing === t.id ? 'Close' : 'Sample content'}</button>}
-                        {(t.status === 'DRAFT' || t.status === 'CLARIFICATION_REQUIRED' || t.status === 'REJECTED') && <button className="btn-ghost" onClick={() => submit(t.id)}>{t.status === 'DRAFT' ? 'Submit' : 'Resubmit'}</button>}
+                        {isEditable(t.status) && <button className="btn-ghost btn-sm" onClick={() => setEditing(editing === t.id ? '' : t.id)}>{editing === t.id ? 'Close' : 'Edit'}</button>}
+                        {(t.status === 'DRAFT' || t.status === 'CLARIFICATION_REQUIRED' || t.status === 'REJECTED') && (
+                          <button className="btn-ghost btn-sm" disabled={busyId === t.id} onClick={() => submit(t.id)}>
+                            {busyId === t.id ? 'Sending…' : t.status === 'DRAFT' ? 'Submit' : 'Resubmit'}
+                          </button>
+                        )}
+                        {!isEditable(t.status) && <span className="text-xs text-slate-400">Under review</span>}
                       </div>
                     </td>
                   </tr>
                   {editing === t.id && (
                     <tr key={`${t.id}-samples`}>
-                      <td className="td bg-slate-50" colSpan={8}><SampleEditor tpl={t} onSaved={async () => { setEditing(''); setNotice('Sample content updated.'); await load(); }} /></td>
+                      <td className="td bg-slate-50" colSpan={8}><TemplateEditor tpl={t} onSaved={async () => { setEditing(''); setNotice('Template updated.'); await load(); }} /></td>
                     </tr>
                   )}
                 </>
@@ -156,43 +164,82 @@ export default function TemplatesPage() {
   );
 }
 
-/** Inline editor for the sample content of an already-created template. */
-function SampleEditor({ tpl, onSaved }: { tpl: Tpl; onSaved: () => void | Promise<void> }) {
-  const declared = useMemo(() => extractVariables(tpl.body), [tpl.body]);
+/** Full inline editor for a template the enterprise may still correct:
+ *  name, category, body, and the sample content of every declared variable. */
+function TemplateEditor({ tpl, onSaved }: { tpl: Tpl; onSaved: () => void | Promise<void> }) {
+  const [name, setName] = useState(tpl.template_name);
+  const [category, setCategory] = useState(tpl.category);
+  const [body, setBody] = useState(tpl.body);
   const [samples, setSamples] = useState<Record<string, string>>(() => {
     const out: Record<string, string> = {};
-    for (const v of declared) out[v] = tpl.variable_samples?.[v] ?? '';
+    for (const v of extractVariables(tpl.body)) out[v] = tpl.variable_samples?.[v] ?? '';
     return out;
   });
-  const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
-  const locked = ['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED', 'APPROVED'].includes(tpl.status);
+  const [busy, setBusy] = useState(false); const [err, setErr] = useState(''); const [errors, setErrors] = useState<Record<string, string>>({});
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  const declared = useMemo(() => extractVariables(body), [body]);
+  const preview = useMemo(() => renderWithSamples(body, samples), [body, samples]);
+
+  function addVariable() {
+    const el = bodyRef.current;
+    const caret = el?.selectionStart ?? body.length;
+    const r = insertVariable(body, caret, nextVariable(body));
+    setBody(r.body);
+    requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(r.caret, r.caret); });
+  }
 
   async function save() {
-    setBusy(true); setErr('');
-    const res = await api('/api/pe/templates', { method: 'PATCH', body: JSON.stringify({ id: tpl.id, variable_samples: samples }) });
+    if (busy) return; setBusy(true); setErr(''); setErrors({});
+    const res = await api('/api/pe/templates', {
+      method: 'PUT',
+      body: JSON.stringify({ id: tpl.id, template_name: name, category, body, variable_samples: samples }),
+    });
     setBusy(false);
-    if (!res.ok) { setErr(res.data.error ?? (Object.values(res.data.errors ?? {})[0] as string) ?? 'Could not save'); return; }
+    if (!res.ok) { setErrors(res.data.errors ?? {}); setErr(res.data.error ?? (Object.values(res.data.errors ?? {})[0] as string) ?? 'Could not save'); return; }
     await onSaved();
   }
 
   return (
     <div className="space-y-3 py-1">
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Sample content · <span className="font-mono">{tpl.template_code ?? tpl.template_name}</span></div>
-      <div className="rounded border border-slate-200 bg-white p-3">
-        <p className="whitespace-pre-wrap text-sm text-slate-800">{renderWithSamples(tpl.body, samples)}</p>
-      </div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Edit template · <span className="font-mono">{tpl.template_code ?? tpl.template_name}</span></div>
+      {tpl.status === 'CLARIFICATION_REQUIRED' && tpl.remarks && (
+        <p className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-800">Reviewer remarks: {tpl.remarks}</p>
+      )}
       <div className="grid gap-3 md:grid-cols-2">
-        {declared.map((v) => (
-          <div key={v}>
-            <label className="label"><span className="font-mono text-blue-700">&lt;{v}&gt;</span></label>
-            <input className="input" disabled={locked} value={samples[v] ?? ''} onChange={(e) => setSamples({ ...samples, [v]: e.target.value })} />
-          </div>
-        ))}
+        <div><label className="label">Template name</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} />{errors.template_name && <p className="mt-1 text-xs text-rose-600">{errors.template_name}</p>}</div>
+        <div><label className="label">Category</label><select className="input" value={category} onChange={(e) => setCategory(e.target.value)}><option value="TRANSACTIONAL">Transactional</option><option value="OTP">OTP</option><option value="PROMOTIONAL">Promotional</option><option value="SERVICE">Service</option></select></div>
       </div>
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="label mb-0">Template body</label>
+          <button type="button" className="btn-ghost btn-sm" onClick={addVariable}>+ Add variable</button>
+        </div>
+        <textarea ref={bodyRef} className="input min-h-[90px]" value={body} onChange={(e) => setBody(e.target.value)} />
+        <p className="mt-1 text-xs text-slate-500">Declare placeholders as <span className="font-mono">&lt;var1&gt;</span>, <span className="font-mono">&lt;var2&gt;</span> …</p>
+        {errors.body && <p className="mt-1 text-xs text-rose-600">{errors.body}</p>}
+      </div>
+      {declared.length > 0 && (
+        <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+          <span className="text-sm font-semibold text-slate-700">Sample content</span>
+          <div className="mt-2 grid gap-3 md:grid-cols-2">
+            {declared.map((v) => (
+              <div key={v}>
+                <label className="label"><span className="font-mono text-blue-700">&lt;{v}&gt;</span></label>
+                <input className="input" placeholder={`Sample value for ${v}`} value={samples[v] ?? ''} onChange={(e) => setSamples({ ...samples, [v]: e.target.value })} />
+                {errors[`variable_samples.${v}`] && <p className="mt-1 text-xs text-rose-600">{errors[`variable_samples.${v}`]}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {body.trim() && (
+        <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">SMS preview</span>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{preview}</p>
+        </div>
+      )}
       {err && <p className="text-xs text-rose-600">{err}</p>}
-      {locked
-        ? <p className="text-xs text-slate-500">This template is under review or approved, so its sample content is frozen.</p>
-        : <button className="btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save sample content'}</button>}
+      <button className="btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save changes'}</button>
     </div>
   );
 }

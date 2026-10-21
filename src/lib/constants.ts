@@ -15,6 +15,20 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const MODULES = ['KYC', 'HEADER', 'TEMPLATE', 'URL'] as const;
 export type ModuleKey = (typeof MODULES)[number];
 
+/** A registration the enterprise may still change. Anything submitted for
+ *  review — or already decided — is frozen until a reviewer returns it. */
+export const EDITABLE_STATUSES = ['DRAFT', 'CLARIFICATION_REQUIRED', 'REJECTED'] as const;
+export function isEditable(status: string): boolean {
+  return (EDITABLE_STATUSES as readonly string[]).includes(status);
+}
+
+/** Plain-language reason a record is frozen, for the edit refusal message. */
+export function statusLockLabel(status: string): string {
+  if (['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED'].includes(status)) return 'under review';
+  if (status === 'APPROVED') return 'approved';
+  return status.replace(/_/g, ' ').toLowerCase();
+}
+
 /** §9 Suggested status values for registration modules */
 export const REG_STATUSES = [
   'DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'CLARIFICATION_REQUIRED', 'RESUBMITTED', 'APPROVED', 'REJECTED',

@@ -6,6 +6,7 @@ import { templateSchema } from '@/lib/validation';
 import { canCreateTemplate } from '@/lib/workflow';
 import { logAudit } from '@/lib/audit';
 import { extractVariables, normaliseSamples } from '@/lib/templateVars';
+import { isEditable, statusLockLabel } from '@/lib/constants';
 import type { Entity, HeaderRegistration, TemplateRegistration } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -69,7 +70,7 @@ export async function PATCH(req: NextRequest) {
     const { data: existing } = await db().from('template_registrations').select('*')
       .eq('id', id).eq('entity_id', entityId).maybeSingle<TemplateRegistration>();
     if (!existing) return notFound('Template not found.');
-    if (['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED', 'APPROVED'].includes(existing.status)) {
+    if (!isEditable(existing.status)) {
       return json({ ok: false, error: 'Sample content cannot be changed while the template is under review or approved.' }, 409);
     }
     const declared = extractVariables(existing.body);
@@ -82,6 +83,46 @@ export async function PATCH(req: NextRequest) {
       .update({ variable_samples: samples, variables: declared.join(',') }).eq('id', id).select('*').single();
     if (error) return badRequest(error.message);
     await logAudit({ entity_id: entityId, module: 'TEMPLATE', record_id: id, action: 'UPDATE_SAMPLES', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: existing.status, to_status: existing.status, remarks: declared.map((v) => `<${v}>`).join(' ') });
+    return json({ ok: true, template: data });
+  } catch (e) { return serverError(e); }
+}
+
+/** Full edit of a template the enterprise may still correct: name, category,
+ *  body, declared variables and their sample content. */
+export async function PUT(req: NextRequest) {
+  const s = await getSession();
+  const g = guard(s, ['PE']); if (g) return g;
+  const entityId = await resolveEntityId(s);
+  if (!entityId) return badRequest('Complete your KYC profile first.');
+  try {
+    const body = await req.json().catch(() => ({}));
+    const id = String(body.id ?? '');
+    if (!id) return badRequest('id is required.');
+    const { data: existing } = await db().from('template_registrations').select('*')
+      .eq('id', id).eq('entity_id', entityId).maybeSingle<TemplateRegistration>();
+    if (!existing) return notFound('Template not found.');
+    if (!isEditable(existing.status)) {
+      return json({ ok: false, error: `This template is ${statusLockLabel(existing.status)} and can no longer be edited.` }, 409);
+    }
+    // The parent header never changes on an edit; reuse the create schema so the
+    // same <varN> / sample-content rules apply.
+    const parsed = templateSchema.safeParse({ ...body, header_id: existing.header_id });
+    if (!parsed.success) {
+      const errors: Record<string, string> = {};
+      for (const i of parsed.error.issues) errors[i.path.join('.')] = i.message;
+      return badRequest('Validation failed', { errors });
+    }
+    const declared = extractVariables(parsed.data.body);
+    const { data, error } = await db().from('template_registrations').update({
+      template_name: parsed.data.template_name,
+      category: parsed.data.category,
+      dlt_template_id: parsed.data.dlt_template_id ?? null,
+      body: parsed.data.body,
+      variables: declared.join(','),
+      variable_samples: normaliseSamples(parsed.data.body, parsed.data.variable_samples),
+    }).eq('id', id).select('*').single();
+    if (error) return badRequest(error.message);
+    await logAudit({ entity_id: entityId, module: 'TEMPLATE', record_id: id, action: 'UPDATE', actor_id: s!.uid, actor_email: s!.email, actor_name: s!.name ?? null, actor_role: s!.role, from_status: existing.status, to_status: existing.status, remarks: `${data.template_code ?? ''} ${parsed.data.template_name}`.trim() });
     return json({ ok: true, template: data });
   } catch (e) { return serverError(e); }
 }
