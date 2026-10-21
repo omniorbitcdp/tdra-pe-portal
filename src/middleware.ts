@@ -16,6 +16,15 @@ const PROTECTED: Array<{ prefix: string; roles: Role[] }> = [
   { prefix: '/api/admin', roles: ['ADMIN'] },
 ];
 
+// Endpoints that serve more than one area BY DESIGN. They are listed explicitly,
+// so the edge stays strict everywhere else. The handler still applies its own,
+// finer-grained check — a PE may only ever read a document belonging to its own
+// entity. Without these entries the reviewer screens cannot preview documents,
+// because the KYC review page reads them through the shared PE document route.
+const SHARED: Array<{ prefix: string; roles: Role[] }> = [
+  { prefix: '/api/pe/kyc/file', roles: ['PE', 'OPERATOR_KYC', 'ADMIN'] },
+];
+
 // Queue managers may only open the queue they own; ADMIN may open all.
 const OPERATOR_PATHS: Array<{ prefix: string; roles: Role[] }> = [
   { prefix: '/operator/kyc', roles: ['OPERATOR_KYC', 'ADMIN'] },
@@ -23,6 +32,10 @@ const OPERATOR_PATHS: Array<{ prefix: string; roles: Role[] }> = [
   { prefix: '/operator/templates', roles: ['OPERATOR_TEMPLATE_URL', 'ADMIN'] },
   { prefix: '/operator/urls', roles: ['OPERATOR_TEMPLATE_URL', 'ADMIN'] },
 ];
+
+function matches<T extends { prefix: string }>(list: T[], pathname: string): T | undefined {
+  return list.find((r) => pathname === r.prefix || pathname.startsWith(r.prefix + '/'));
+}
 
 const isApi = (pathname: string) => pathname.startsWith('/api/');
 
@@ -33,7 +46,7 @@ function denyApi(status: 401 | 403, error: string) {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const area = PROTECTED.find((r) => pathname === r.prefix || pathname.startsWith(r.prefix + '/'));
+  const area = matches(PROTECTED, pathname);
   if (!area) return NextResponse.next();
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
@@ -43,13 +56,19 @@ export async function middleware(req: NextRequest) {
     if (isApi(pathname)) return denyApi(401, 'Authentication required.');
     return toLogin(req, pathname);
   }
-  if (!area.roles.includes(session.role)) {
+
+  // A shared endpoint widens the area's role list; everything else uses the
+  // area's own list.
+  const shared = matches(SHARED, pathname);
+  const allowed = shared ? shared.roles : area.roles;
+
+  if (!allowed.includes(session.role)) {
     if (isApi(pathname)) return denyApi(403, 'Your role cannot access this resource.');
     return bounceTo(req, session.role);
   }
 
   // Queue-level scope check (UI pages only — the API scopes by module itself).
-  const queue = OPERATOR_PATHS.find((r) => pathname === r.prefix || pathname.startsWith(r.prefix + '/'));
+  const queue = matches(OPERATOR_PATHS, pathname);
   if (queue && !queue.roles.includes(session.role)) {
     if (isApi(pathname)) return denyApi(403, 'Your role cannot access this queue.');
     return bounceTo(req, session.role);
