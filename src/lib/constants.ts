@@ -29,6 +29,15 @@ export function statusLockLabel(status: string): string {
   return status.replace(/_/g, ' ').toLowerCase();
 }
 
+/** Short note for the row-actions column when a record can no longer be edited.
+ *  Uses the record's REAL status — an approved record is never described as
+ *  "under review". */
+export function lockNote(status: string): string {
+  if (status === 'APPROVED') return 'Approved · locked';
+  if (['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED'].includes(status)) return 'Under review';
+  return status.replace(/_/g, ' ').toLowerCase();
+}
+
 /** §9 Suggested status values for registration modules */
 export const REG_STATUSES = [
   'DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'CLARIFICATION_REQUIRED', 'RESUBMITTED', 'APPROVED', 'REJECTED',

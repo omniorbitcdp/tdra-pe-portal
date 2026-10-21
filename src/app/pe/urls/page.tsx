@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
-import { isEditable } from '@/lib/constants';
+import { isEditable, lockNote } from '@/lib/constants';
 
 interface Url { id: string; url_code: string | null; url: string; method: string; callback_type: string; status: string; template_id: string; remarks: string | null }
 interface Tpl { id: string; template_code: string | null; template_name: string; status: string }
@@ -78,7 +78,7 @@ export default function UrlsPage() {
                             {busyId === u.id ? 'Sending…' : u.status === 'DRAFT' ? 'Submit' : 'Resubmit'}
                           </button>
                         )}
-                        {!isEditable(u.status) && <span className="text-xs text-slate-400">Under review</span>}
+                        {!isEditable(u.status) && <span className="text-xs text-slate-400">{lockNote(u.status)}</span>}
                       </div>
                     </td>
                   </tr>

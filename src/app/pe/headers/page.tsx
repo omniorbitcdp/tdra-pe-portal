@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
-import { isEditable } from '@/lib/constants';
+import { isEditable, lockNote } from '@/lib/constants';
 
 interface Header { id: string; header_code: string | null; header_name: string; sender_id: string; header_type: string; ussd: string | null; status: string; remarks: string | null }
 
@@ -67,7 +67,7 @@ export default function HeadersPage() {
                             {busyId === h.id ? 'Sending…' : h.status === 'DRAFT' ? 'Submit' : 'Resubmit'}
                           </button>
                         )}
-                        {!isEditable(h.status) && <span className="text-xs text-slate-400">Under review</span>}
+                        {!isEditable(h.status) && <span className="text-xs text-slate-400">{lockNote(h.status)}</span>}
                       </div>
                     </td>
                   </tr>

@@ -4,7 +4,7 @@ import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import { extractVariables, insertVariable, nextVariable, renderWithSamples } from '@/lib/templateVars';
-import { isEditable } from '@/lib/constants';
+import { isEditable, lockNote } from '@/lib/constants';
 
 interface Tpl {
   id: string; template_code: string | null; template_name: string; category: string; channel: string;
@@ -145,7 +145,7 @@ export default function TemplatesPage() {
                             {busyId === t.id ? 'Sending…' : t.status === 'DRAFT' ? 'Submit' : 'Resubmit'}
                           </button>
                         )}
-                        {!isEditable(t.status) && <span className="text-xs text-slate-400">Under review</span>}
+                        {!isEditable(t.status) && <span className="text-xs text-slate-400">{lockNote(t.status)}</span>}
                       </div>
                     </td>
                   </tr>
