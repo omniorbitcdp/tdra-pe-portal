@@ -212,14 +212,32 @@ function TrackForm() {
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   const [r, setR] = useState<TrackResult | null>(null);
 
-  async function lookup(e: React.FormEvent) {
-    e.preventDefault(); if (busy) return;
-    setBusy(true); setError(''); setR(null);
-    const res = await api<{ grievance: TrackResult }>(`/api/grievances/track?grievanceId=${encodeURIComponent(id.trim())}&contact=${encodeURIComponent(contact.trim())}`);
-    setBusy(false);
-    if (!res.ok) { setError(res.data.error ?? 'Lookup failed'); return; }
+  async function fetchStatus(silent = false) {
+    if (!id.trim() || !contact.trim()) return;
+    if (!silent) { setBusy(true); setError(''); setR(null); }
+    const res = await api<{ grievance: TrackResult }>(
+      `/api/grievances/track?grievanceId=${encodeURIComponent(id.trim())}&contact=${encodeURIComponent(contact.trim())}&_=${Date.now()}`,
+    );
+    if (!silent) setBusy(false);
+    if (!res.ok) { if (!silent) setError(res.data.error ?? 'Lookup failed'); return; }
     setR((res.data as unknown as { grievance: TrackResult }).grievance);
   }
+
+  async function lookup(e: React.FormEvent) {
+    e.preventDefault();
+    await fetchStatus();
+  }
+
+  // Coming back to the tab refreshes the status, so a decision taken by the
+  // enterprise shows up without re-submitting the form.
+  useEffect(() => {
+    if (!r) return;
+    const onFocus = () => { void fetchStatus(true); };
+    window.addEventListener('focus', onFocus);
+    const timer = setInterval(onFocus, 60000);
+    return () => { window.removeEventListener('focus', onFocus); clearInterval(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [r?.grievance_code, id, contact]);
 
   return (
     <div className="space-y-5">
@@ -233,7 +251,10 @@ function TrackForm() {
           <div><label className="label">Grievance ID</label><input className="input font-mono" placeholder="GRV-12345678" value={id} onChange={(e) => setId(e.target.value)} required /></div>
           <div><label className="label">Mobile or e-mail used</label><input className="input" placeholder="+9715xxxxxxxx" value={contact} onChange={(e) => setContact(e.target.value)} required /></div>
         </div>
-        <button className="btn-primary" disabled={busy}>{busy ? 'Looking up…' : 'Check status'}</button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button className="btn-primary" disabled={busy}>{busy ? 'Looking up…' : 'Check status'}</button>
+          {r && <button type="button" className="btn-ghost btn-sm" onClick={() => void fetchStatus()}>Refresh</button>}
+        </div>
       </form>
 
       {r && <TrackResultCard r={r} contact={contact} />}

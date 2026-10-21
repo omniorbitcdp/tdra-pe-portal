@@ -6,6 +6,8 @@ import { contactMatches, hoursUntil, isOverdue, maskContact } from '@/lib/grieva
 import { signedGrievanceUrl } from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 /** Public tracking — requires the grievance ID plus the contact used to file it. */
 export async function GET(req: NextRequest) {
@@ -31,10 +33,18 @@ export async function GET(req: NextRequest) {
 
   const attachmentUrl = g.attachment_path ? await signedGrievanceUrl(g.attachment_path, 300) : null;
 
+  // A stage is complete if the status has moved past it OR its timestamp is
+  // set — so an action taken in one step never leaves a gap in the timeline.
+  const STAGE: Record<string, number> = { SUBMITTED: 0, ACKNOWLEDGED: 1, RESOLVED: 2, REJECTED: 2, CLOSED: 2 };
+  const stage = STAGE[String(g.status)] ?? 0;
   const timeline = [
     { at: g.created_at, label: 'Grievance received', done: true },
-    { at: g.acknowledged_at, label: 'Acknowledged by the enterprise', done: Boolean(g.acknowledged_at) },
-    { at: g.resolved_at, label: g.status === 'REJECTED' ? 'Closed by the enterprise' : 'Resolved', done: Boolean(g.resolved_at) },
+    { at: g.acknowledged_at, label: 'Acknowledged by the enterprise', done: stage >= 1 || Boolean(g.acknowledged_at) },
+    {
+      at: g.resolved_at,
+      label: g.status === 'REJECTED' ? 'Declined by the enterprise' : 'Resolved',
+      done: stage >= 2 || Boolean(g.resolved_at),
+    },
   ];
 
   return json({

@@ -89,6 +89,12 @@ insert into platform_settings (key, value)
 values ('grievance_sla_hours', '{"value": 48}'::jsonb)
 on conflict (key) do nothing;
 
+-- Repair rows actioned before acknowledged_at was written alongside the status.
+update grievances
+set acknowledged_at = coalesce(acknowledged_at, resolved_at, updated_at)
+where status in ('ACKNOWLEDGED','RESOLVED','REJECTED','CLOSED')
+  and acknowledged_at is null;
+
 select
   (select count(*) from information_schema.tables where table_name = 'grievances') as grievances_table,
   (select count(*) from storage.buckets where id = 'grievance-attachments')         as bucket,

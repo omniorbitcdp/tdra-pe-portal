@@ -6,6 +6,7 @@ export interface ApiResult<T> { ok: boolean; status: number; data: T & ApiError 
 export async function api<T = Record<string, unknown>>(path: string, init?: RequestInit): Promise<ApiResult<T>> {
   const res = await fetch(path, {
     ...init,
+    cache: 'no-store',
     headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
   });
   let data: Record<string, unknown> = {};
