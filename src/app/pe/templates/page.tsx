@@ -1,7 +1,7 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { api } from '@/lib/client';
+import { api, hasApiCache } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import { extractVariables, insertVariable, nextVariable, renderWithSamples } from '@/lib/templateVars';
@@ -21,7 +21,7 @@ export default function TemplatesPage() {
   const [headers, setHeaders] = useState<Hdr[]>([]);
   const [allHeaders, setAllHeaders] = useState<Hdr[]>([]);
   const [form, setForm] = useState({ ...EMPTY });
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => hasApiCache('/api/pe/templates'));
   const [error, setError] = useState(''); const [errors, setErrors] = useState<Record<string, string>>({}); const [notice, setNotice] = useState(''); const [busy, setBusy] = useState(false); const [busyId, setBusyId] = useState('');
   const [editing, setEditing] = useState<string>('');
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
@@ -146,7 +146,7 @@ export default function TemplatesPage() {
                             {busyId === t.id ? tr('Sending…') : t.status === 'DRAFT' ? tr('Submit') : tr('Resubmit')}
                           </button>
                         )}
-                        {!isEditable(t.status) && <span className="text-xs text-slate-400">{lockNote(t.status)}</span>}
+                        {!isEditable(t.status) && <span className="text-xs text-slate-400">{tr(lockNote(t.status))}</span>}
                       </div>
                     </td>
                   </tr>

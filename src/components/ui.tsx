@@ -1,3 +1,4 @@
+'use client';
 // Shared presentational kit. Designed for dense operational screens: clear
 // hierarchy, scannable status, consistent spacing.
 import React from 'react';

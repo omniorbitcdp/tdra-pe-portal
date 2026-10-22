@@ -121,9 +121,12 @@ export const grievanceActionSchema = z.object({
 });
 
 export const urlSchema = z.object({
-  template_id: z.string().uuid('Select an approved template'),
+  // A URL may hang off an approved template OR stand alone (independent
+  // callback endpoint). Method is no longer collected — the callback is POST.
+  template_id: z.string().uuid('Select an approved template').nullable().optional()
+    .or(z.literal('').transform(() => null)),
   url: z.string().trim().url('Enter a valid URL'),
-  method: z.enum(['GET', 'POST']).default('POST'),
+  method: z.enum(['GET', 'POST']).optional().default('POST'),
   callback_type: z.enum(['DLT', 'SMS', 'WHATSAPP']).default('DLT'),
 });
 

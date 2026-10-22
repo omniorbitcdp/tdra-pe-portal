@@ -197,7 +197,7 @@ create trigger trg_template_updated before update on template_registrations
 create table if not exists url_registrations (
   id            uuid primary key default gen_random_uuid(),
   entity_id     uuid not null references entities(id) on delete cascade,
-  template_id   uuid not null references template_registrations(id) on delete restrict,
+  template_id   uuid references template_registrations(id) on delete restrict,  -- null = independent URL
   url           text not null,
   method        text not null default 'GET' check (method in ('GET','POST')),
   callback_type text not null default 'DLT' check (callback_type in ('DLT','SMS','WHATSAPP')),

@@ -1,7 +1,7 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/client';
+import { api, hasApiCache } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import { isEditable, lockNote } from '@/lib/constants';
@@ -13,7 +13,7 @@ const EMPTY = { header_name: '', sender_id: '', header_type: 'ALPHANUMERIC' };
 export default function HeadersPage() {
   const [items, setItems] = useState<Header[]>([]);
   const [form, setForm] = useState({ ...EMPTY });
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => hasApiCache('/api/pe/headers'));
   const [error, setError] = useState(''); const [errors, setErrors] = useState<Record<string, string>>({}); const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false); const [busyId, setBusyId] = useState('');
   const [editing, setEditing] = useState('');
@@ -68,7 +68,7 @@ export default function HeadersPage() {
                             {busyId === h.id ? tr('Sending…') : h.status === 'DRAFT' ? tr('Submit') : tr('Resubmit')}
                           </button>
                         )}
-                        {!isEditable(h.status) && <span className="text-xs text-slate-400">{lockNote(h.status)}</span>}
+                        {!isEditable(h.status) && <span className="text-xs text-slate-400">{tr(lockNote(h.status))}</span>}
                       </div>
                     </td>
                   </tr>

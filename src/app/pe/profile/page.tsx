@@ -1,7 +1,7 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/client';
+import { api, hasApiCache } from '@/lib/client';
 import { PageHeader, Card } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import { ENTITY_TYPES, UAE_EMIRATES, INDUSTRIES } from '@/lib/constants';
@@ -15,7 +15,7 @@ const EMPTY = {
 
 export default function ProfilePage() {
   const [form, setForm] = useState<Record<string, string>>(EMPTY);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => hasApiCache('/api/pe/profile'));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');

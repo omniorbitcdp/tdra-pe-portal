@@ -36,8 +36,13 @@ export async function POST(req: NextRequest) {
       db().from('entities').select('*').eq('id', entityId).maybeSingle<Entity>(),
       db().from('template_registrations').select('*').eq('id', parsed.data.template_id).eq('entity_id', entityId).maybeSingle<TemplateRegistration>(),
     ]);
-    const gate = canCreateUrl(entity, tpl);
-    if (!gate.ok) return json({ ok: false, error: gate.reason }, 409);
+    // Independent URL: no template to check, only the entity's KYC gate.
+    if (parsed.data.template_id) {
+      const gate = canCreateUrl(entity, tpl);
+      if (!gate.ok) return json({ ok: false, error: gate.reason }, 409);
+    } else if (!entity || entity.kyc_status !== 'APPROVED') {
+      return json({ ok: false, error: 'KYC must be approved before registering a URL.' }, 409);
+    }
 
     const { data, error } = await db().from('url_registrations')
       .insert({ ...parsed.data, entity_id: entityId, status: 'DRAFT', created_by: s!.uid }).select('*').single();
@@ -69,11 +74,13 @@ export async function PUT(req: NextRequest) {
       for (const i of parsed.error.issues) errors[i.path.join('.')] = i.message;
       return badRequest('Validation failed', { errors });
     }
-    // A re-pointed URL must still hang off an APPROVED template of this entity.
-    const { data: tpl } = await db().from('template_registrations').select('*')
-      .eq('id', parsed.data.template_id).eq('entity_id', entityId).maybeSingle<TemplateRegistration>();
-    if (!tpl || tpl.status !== 'APPROVED') {
-      return json({ ok: false, error: 'The selected template must be APPROVED.' }, 409);
+    // Only a linked template has to be one of this entity's APPROVED ones.
+    if (parsed.data.template_id) {
+      const { data: tpl } = await db().from('template_registrations').select('*')
+        .eq('id', parsed.data.template_id).eq('entity_id', entityId).maybeSingle<TemplateRegistration>();
+      if (!tpl || tpl.status !== 'APPROVED') {
+        return json({ ok: false, error: 'The selected template must be APPROVED.' }, 409);
+      }
     }
     const { data, error } = await db().from('url_registrations')
       .update(parsed.data).eq('id', id).select('*').single();

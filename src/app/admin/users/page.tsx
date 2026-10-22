@@ -1,7 +1,7 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/client';
+import { api, hasApiCache } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import { ROLES, ROLE_LABELS, ACCOUNT_STATUSES } from '@/lib/constants';
@@ -10,7 +10,7 @@ interface User { id: string; email: string; full_name: string | null; role: stri
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => hasApiCache('/api/admin/users'));
   const [error, setError] = useState(''); const [notice, setNotice] = useState(''); const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', role: 'OPERATOR_KYC', password: '' });
   const [busy, setBusy] = useState(false);

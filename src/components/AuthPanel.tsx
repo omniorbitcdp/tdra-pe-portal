@@ -1,6 +1,7 @@
+'use client';
 /** The brand / story panel shared by the sign-in and business-registration
  *  screens, so the two entry points stay visually identical. */
-import { t as tr } from '@/lib/i18n/live';
+import { useT } from './LangProvider';
 
 export interface Brand { name: string; short: string; logo: string | null }
 
@@ -18,6 +19,7 @@ export const COPYRIGHT = '© Onextel Copyright 2026';
 /** Small brand row shown above the card on narrow screens, where the left
  *  panel is hidden. */
 export function AuthMobileBrand({ brand }: { brand: Brand }) {
+  const tr = useT();
   return (
     <div className="mb-8 flex items-center gap-3 lg:hidden">
       {brand.logo ? (
@@ -34,6 +36,7 @@ export function AuthMobileBrand({ brand }: { brand: Brand }) {
 }
 
 export function AuthBrandPanel({ brand }: { brand: Brand }) {
+  const tr = useT();
   return (
     <aside className="relative hidden overflow-hidden bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 lg:flex lg:flex-col lg:justify-between lg:p-12">
       <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-200/50 blur-3xl" />

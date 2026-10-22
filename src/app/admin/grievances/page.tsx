@@ -2,7 +2,7 @@
 import { t as tr } from '@/lib/i18n/live';
 import { fmtDate, fmtDateTime } from '@/lib/datetime';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { api } from '@/lib/client';
+import { api, hasApiCache } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import {
@@ -45,7 +45,7 @@ const BTN: Record<GrievanceAction, string> = {
 export default function AdminGrievancesPage() {
   const [rows, setRows] = useState<G[]>([]);
   const [summary, setSummary] = useState<Summary>({ total: 0, open: 0, escalated: 0, overdue: 0, unmatched: 0 });
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => hasApiCache('/api/admin/grievances'));
   const [tab, setTab] = useState<Tab>('ESCALATED');
   const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const [busyId, setBusyId] = useState(''); const [openId, setOpenId] = useState('');

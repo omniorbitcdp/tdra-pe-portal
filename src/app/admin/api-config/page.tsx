@@ -1,7 +1,7 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/client';
+import { api, hasApiCache } from '@/lib/client';
 import { PageHeader, Card, Empty } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import { CHANNELS } from '@/lib/constants';
@@ -39,7 +39,7 @@ const SAMPLE_VARS = { recipient: '+971500000000', body: 'Test message from TDRA 
 export default function ApiConfigPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [draft, setDraft] = useState<Provider>(BLANK);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => hasApiCache('/api/admin/providers'));
   const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const [varsText, setVarsText] = useState(JSON.stringify(SAMPLE_VARS, null, 2));
   const [result, setResult] = useState<Record<string, unknown> | null>(null);

@@ -18,6 +18,16 @@ const cache = new Map<string, { at: number; result: ApiResult<Record<string, unk
 const inflight = new Map<string, Promise<ApiResult<Record<string, unknown>>>>();
 
 /** Drop cached GETs — all of them, or those whose path starts with `prefix`. */
+/** Synchronous cache read — lets a page paint its last data before any fetch. */
+export function peekApi<T = Record<string, unknown>>(path: string): (T & ApiError) | null {
+  const hit = cache.get(path);
+  return hit ? (hit.result.data as T & ApiError) : null;
+}
+
+export function hasApiCache(path?: string): boolean {
+  return path ? cache.has(path) : cache.size > 0;
+}
+
 export function invalidateApi(prefix?: string): void {
   if (!prefix) { cache.clear(); return; }
   for (const key of Array.from(cache.keys())) if (key.startsWith(prefix)) cache.delete(key);

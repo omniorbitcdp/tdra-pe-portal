@@ -1,7 +1,7 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
-import { api, apiForm } from '@/lib/client';
+import { api, apiForm, hasApiCache } from '@/lib/client';
 import { PageHeader, Card, StatusPill } from '@/components/ui';
 import { Loader, ErrorBox, Notice } from '@/components/nav';
 import { MANDATORY_DOC_TYPES, DOC_TYPE_LABELS, DEFAULT_MAX_KYC_FILE_MB } from '@/lib/constants';
@@ -19,7 +19,7 @@ const FIELD_LABELS: Array<[keyof Entity, string]> = [
 export default function KycPage() {
   const [docs, setDocs] = useState<Doc[]>([]);
   const [entity, setEntity] = useState<Entity | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => hasApiCache('/api/pe/kyc'));
   const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(''); const [submitting, setSubmitting] = useState(false);
   const [maxMb, setMaxMb] = useState(DEFAULT_MAX_KYC_FILE_MB);
