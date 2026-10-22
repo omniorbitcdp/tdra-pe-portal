@@ -29,11 +29,11 @@ export function RegisterForm() {
       <div><label className="label">{tr("Full name")}</label><input className="input" value={form.full_name} onChange={(e) => set('full_name', e.target.value)} required /><Err m={errors.full_name} /></div>
       <div><label className="label">{tr("Official email")}</label><input type="email" className="input" value={form.email} onChange={(e) => set('email', e.target.value)} required /><Err m={errors.email} /></div>
       <div><label className="label">{tr("Mobile (with country code)")}</label><input className="input" placeholder="+9715xxxxxxxx" value={form.phone} onChange={(e) => set('phone', e.target.value)} required /><Err m={errors.phone} /></div>
-      <div><label className="label">{tr("Password")}</label><input type="password" className="input" value={form.password} onChange={(e) => set('password', e.target.value)} required /><p className="mt-1 text-xs text-slate-400">{POLICY}</p><Err m={errors.password} /></div>
-      <button className="btn-primary w-full" disabled={busy}>{busy ? 'Creating…' : 'Create account'}</button>
+      <div><label className="label">{tr("Password")}</label><input type="password" className="input" value={form.password} onChange={(e) => set('password', e.target.value)} required /><p className="mt-1 text-xs text-slate-400">{tr(POLICY)}</p><Err m={errors.password} /></div>
+      <button className="btn-primary w-full" disabled={busy}>{busy ? tr('Creating…') : tr('Create account')}</button>
       {message && <Link className="btn-ghost w-full" href="/login">{tr("Continue to sign in")}</Link>}
     </form>
   );
 }
 
-function Err({ m }: { m?: string }) { return m ? <p className="mt-1 text-xs text-rose-600">{m}</p> : null; }
+function Err({ m }: { m?: string }) { return m ? <p className="mt-1 text-xs text-rose-600">{tr(m)}</p> : null; }

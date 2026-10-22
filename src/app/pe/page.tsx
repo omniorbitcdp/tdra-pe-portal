@@ -50,23 +50,23 @@ export default function PeDashboard() {
   const urlStatus = latest(data.urls);
 
   const steps = [
-    { label: 'KYC approved', status: e.kyc_status, ok: e.kyc_status === 'APPROVED', href: '/pe/kyc', note: `PE ID ${e.entity_code ?? '—'}` },
-    { label: 'Header approved', status: headerStatus, ok: headerStatus === 'APPROVED', href: '/pe/headers', note: `${data.headers.length} request(s)` },
-    { label: 'Template approved', status: templateStatus, ok: templateStatus === 'APPROVED', href: '/pe/templates', note: `${data.templates.length} request(s)` },
+    { label: tr('KYC approved'), status: e.kyc_status, ok: e.kyc_status === 'APPROVED', href: '/pe/kyc', note: `PE ID ${e.entity_code ?? '—'}` },
+    { label: tr('Header approved'), status: headerStatus, ok: headerStatus === 'APPROVED', href: '/pe/headers', note: `${data.headers.length} request(s)` },
+    { label: tr('Template approved'), status: templateStatus, ok: templateStatus === 'APPROVED', href: '/pe/templates', note: `${data.templates.length} request(s)` },
     { label: 'URL approved', status: urlStatus, ok: urlStatus === 'APPROVED', href: '/pe/urls', note: `${data.urls.length} request(s)` },
   ];
 
   const nextAction = !e.kyc_info_approved || e.kyc_status !== 'APPROVED'
-    ? { label: uploaded < 4 ? 'Upload your KYC documents' : (['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED'].includes(e.kyc_status) ? 'KYC is with the operator for review' : 'Submit your KYC pack for review'), href: '/pe/kyc' }
+    ? { label: uploaded < 4 ? tr('Upload your KYC documents') : (['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED'].includes(e.kyc_status) ? 'KYC is with the operator for review' : 'Submit your KYC pack for review'), href: '/pe/kyc' }
     : headerStatus !== 'APPROVED' ? { label: 'Register a header', href: '/pe/headers' }
     : templateStatus !== 'APPROVED' ? { label: 'Register a template', href: '/pe/templates' }
     : urlStatus !== 'APPROVED' ? { label: 'Register a URL', href: '/pe/urls' }
-    : { label: 'All set — every stage is approved', href: '/pe' };
+    : { label: tr('All set — every stage is approved'), href: '/pe' };
 
   return (
     <div>
       <PageHeader title={e.legal_entity_name}
-        subtitle={`${e.entity_type} · KYC ${e.kyc_status.replace(/_/g, ' ')}`}
+        subtitle={`${tr(e.entity_type)} · KYC ${e.kyc_status.replace(/_/g, ' ')}`}
         actions={<a className="btn-ghost" href="/pe/profile">{tr("Edit details")}</a>} />
 
       <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
@@ -103,7 +103,7 @@ export default function PeDashboard() {
             const d = docs.get(t);
             return (
               <div key={t} className="rounded-lg border border-slate-200 p-3">
-                <div className="text-sm font-semibold text-slate-800">{DOC_TYPE_LABELS[t]}</div>
+                <div className="text-sm font-semibold text-slate-800">{tr(DOC_TYPE_LABELS[t])}</div>
                 <div className="mt-2"><StatusPill status={d ? d.status : 'NOT_STARTED'} /></div>
                 {d?.remarks && <p className="mt-2 text-[11px] text-amber-700">{d.remarks}</p>}
               </div>
@@ -127,7 +127,7 @@ export default function PeDashboard() {
                   <td className="td text-xs">{h.module}</td>
                   <td className="td text-xs font-medium">{h.action.replace(/_/g, ' ')}</td>
                   <td className="td">{h.to_status ? <StatusPill status={h.to_status} /> : '—'}</td>
-                  <td className="td text-xs">{h.actor_name ?? h.actor_email ?? 'System'}</td>
+                  <td className="td text-xs">{h.actor_name ?? h.actor_email ?? tr('System')}</td>
                   <td className="td max-w-[280px] text-xs text-slate-500">{h.remarks ?? '—'}</td>
                 </tr>
               ))}

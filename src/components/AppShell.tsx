@@ -20,8 +20,17 @@ const STATUS_COLUMN: Record<ModuleKey, { table: string; column: string }> = {
   URL: { table: 'url_registrations', column: 'status' },
 };
 
+/** Badge counts are re-read on every server render (including a language switch).
+ *  A few seconds of caching removes four COUNT queries from that path. */
+const COUNT_TTL_MS = 5000;
+const countCache = new Map<string, { at: number; value: Record<string, number> }>();
+
 /** Counts of items awaiting reviewer action, per module — drives the nav badges. */
 async function pendingCounts(modules: ModuleKey[]): Promise<Record<string, number>> {
+  const key = modules.slice().sort().join(',');
+  const hit = countCache.get(key);
+  if (hit && Date.now() - hit.at < COUNT_TTL_MS) return hit.value;
+
   const out: Record<string, number> = {};
   await Promise.all(modules.map(async (m) => {
     const { table, column } = STATUS_COLUMN[m];
@@ -30,6 +39,7 @@ async function pendingCounts(modules: ModuleKey[]): Promise<Record<string, numbe
       .in(column, ['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED']);
     out[m] = count ?? 0;
   }));
+  countCache.set(key, { at: Date.now(), value: out });
   return out;
 }
 

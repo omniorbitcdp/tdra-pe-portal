@@ -1,7 +1,7 @@
 'use client';
 // Language context. The choice lives in a cookie (so server components agree)
 // and in localStorage (so a fresh tab keeps it even before the cookie is read).
-import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DEFAULT_LANG, isLang, LANG_COOKIE, translate, type Lang, type TVars,
@@ -31,6 +31,9 @@ export function LangProvider({ initial, children }: { initial: Lang; children: R
   // Keep the hook-free `t()` in step before anything renders.
   setLiveLang(lang);
   const router = useRouter();
+  // Server-rendered text (shell, server pages) is refreshed as a NON-urgent
+  // transition, so the click paints instantly and never waits on a fetch.
+  const [, startTransition] = useTransition();
 
   // A choice made in another tab (or before the cookie was set) wins on mount.
   useEffect(() => {
@@ -39,9 +42,9 @@ export function LangProvider({ initial, children }: { initial: Lang; children: R
     if (isLang(stored) && stored !== initial) {
       setLangState(stored);
       writeCookie(stored);
-      router.refresh();
+      startTransition(() => router.refresh());
     }
-  }, [initial, router]);
+  }, [initial, router, startTransition]);
 
   useEffect(() => {
     const dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -55,9 +58,10 @@ export function LangProvider({ initial, children }: { initial: Lang; children: R
     writeCookie(next);
     document.documentElement.lang = next;
     document.documentElement.dir = next === 'ar' ? 'rtl' : 'ltr';
-    // Server components re-render with the new cookie.
-    router.refresh();
-  }, [router]);
+    // Client text has already switched; sync the server-rendered bits in the
+    // background so the UI never freezes mid-toggle.
+    startTransition(() => router.refresh());
+  }, [router, startTransition]);
 
   const value = useMemo<LangCtx>(() => ({
     lang,

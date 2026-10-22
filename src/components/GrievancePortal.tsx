@@ -49,7 +49,7 @@ export function GrievancePortal({ initialTab, slaHours, maxFileMb }: { initialTa
         {([['raise', 'Raise Grievance'], ['track', 'Track Grievance']] as Array<[Tab, string]>).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} aria-pressed={tab === k}
             className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition ${tab === k ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>
-            {label}
+            {tr(label)}
           </button>
         ))}
       </div>
@@ -107,7 +107,7 @@ function RaiseForm({ maxFileMb, onTrack }: { maxFileMb: number; onTrack: () => v
           <span className="font-mono text-xl font-bold tracking-wider text-blue-800">{done.code}</span>
           <button type="button" className="btn-ghost btn-sm"
             onClick={() => { navigator.clipboard?.writeText(done.code); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? tr('Copied') : tr('Copy')}
           </button>
         </div>
         <p className="mt-4 text-sm text-slate-600">
@@ -164,7 +164,7 @@ function RaiseForm({ maxFileMb, onTrack }: { maxFileMb: number; onTrack: () => v
         <div>
           <label className="label">{tr("Type of grievance")}</label>
           <select className="input" value={form.category} onChange={(e) => set('category', e.target.value)}>
-            {GRIEVANCE_CATEGORIES.map((c) => <option key={c} value={c}>{tr(GRIEVANCE_CATEGORY_LABELS[c])}</option>)}
+            {GRIEVANCE_CATEGORIES.map((c) => <option key={tr(c)} value={tr(c)}>{tr(GRIEVANCE_CATEGORY_LABELS[c])}</option>)}
           </select>
         </div>
 
@@ -207,7 +207,7 @@ function RaiseForm({ maxFileMb, onTrack }: { maxFileMb: number; onTrack: () => v
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[11px] text-slate-500">{tr("Submitting creates a unique grievance ID you can track.")}</p>
-        <button className="btn-primary" disabled={busy}>{busy ? 'Submitting…' : 'Submit grievance'}</button>
+        <button className="btn-primary" disabled={busy}>{busy ? tr('Submitting…') : tr('Submit grievance')}</button>
       </div>
     </form>
   );
@@ -258,7 +258,7 @@ function TrackForm() {
           <div><label className="label">{tr("Mobile or e-mail used")}</label><input className="input" placeholder="+9715xxxxxxxx" value={contact} onChange={(e) => setContact(e.target.value)} required /></div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button className="btn-primary" disabled={busy}>{busy ? 'Looking up…' : 'Check status'}</button>
+          <button className="btn-primary" disabled={busy}>{busy ? tr('Looking up…') : tr('Check status')}</button>
           {r && <button type="button" className="btn-ghost btn-sm" onClick={() => void fetchStatus()}>{tr("Refresh")}</button>}
         </div>
       </form>
@@ -280,18 +280,18 @@ function TrackResultCard({ r, contact, onChanged }: { r: TrackResult; contact: s
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <StatusPill status={r.status} label={tr(GRIEVANCE_STATUS_LABELS[r.status as keyof typeof GRIEVANCE_STATUS_LABELS] ?? r.status)} />
+          <StatusPill status={tr(r.status)} label={tr(GRIEVANCE_STATUS_LABELS[r.status as keyof typeof GRIEVANCE_STATUS_LABELS] ?? r.status)} />
           {r.overdue && <span className="pill bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200">{tr("SLA lapsed")}</span>}
         </div>
       </div>
 
       <ol className="mt-6 space-y-4">
         {r.timeline.map((t) => (
-          <li key={t.label} className="flex gap-3">
+          <li key={tr(t.label)} className="flex gap-3">
             <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
               t.done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{t.done ? '✓' : '·'}</span>
             <span>
-              <span className={`block text-sm font-semibold ${t.done ? 'text-slate-800' : 'text-slate-400'}`}>{t.label}</span>
+              <span className={`block text-sm font-semibold ${t.done ? 'text-slate-800' : 'text-slate-400'}`}>{tr(t.label)}</span>
               {t.at && <span className="block text-[11px] text-slate-500">{new Date(t.at).toLocaleString()}</span>}
             </span>
           </li>
@@ -338,7 +338,7 @@ function TrackResultCard({ r, contact, onChanged }: { r: TrackResult; contact: s
         {r.attachment_url && (
           <div className="sm:col-span-2">
             <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Your screenshot")}</dt>
-            <dd className="text-sm"><a className="font-semibold text-blue-700 hover:underline" href={r.attachment_url} target="_blank" rel="noreferrer">{r.attachment_name ?? 'Open attachment'}</a></dd>
+            <dd className="text-sm"><a className="font-semibold text-blue-700 hover:underline" href={r.attachment_url} target="_blank" rel="noreferrer">{r.attachment_name ?? tr('Open attachment')}</a></dd>
           </div>
         )}
       </dl>
@@ -359,7 +359,7 @@ function ReporterActions({ r, contact, onChanged }: { r: TrackResult; contact: s
 
   async function submit(action: 'REOPEN' | 'ESCALATE') {
     if (busy) return;
-    if (reason.trim().length < 5) { setError('Tell us briefly why (at least 5 characters).'); return; }
+    if (reason.trim().length < 5) { setError(tr('Tell us briefly why (at least 5 characters).')); return; }
     setBusy(true); setError('');
     const res = await api('/api/grievances/reopen', {
       method: 'POST',
@@ -368,8 +368,8 @@ function ReporterActions({ r, contact, onChanged }: { r: TrackResult; contact: s
     setBusy(false);
     if (!res.ok) { setError((res.data as { error?: string }).error ?? tr('Could not update the grievance.')); return; }
     setDone(action === 'REOPEN'
-      ? 'Re-opened. The enterprise has been notified and must respond again.'
-      : 'Escalated. The platform administrator now has your grievance.');
+      ? tr('Re-opened. The enterprise has been notified and must respond again.')
+      : tr('Escalated. The platform administrator now has your grievance.'));
     setChoice(''); setReason('');
     await onChanged();
   }
@@ -391,13 +391,13 @@ function ReporterActions({ r, contact, onChanged }: { r: TrackResult; contact: s
         </div>
       ) : (
         <div className="mt-3 space-y-2">
-          <label className="label">{choice === 'REOPEN' ? 'Why should this be re-opened?' : 'Why are you escalating?'}</label>
+          <label className="label">{choice === 'REOPEN' ? tr('Why should this be re-opened?') : tr('Why are you escalating?')}</label>
           <textarea className="input min-h-[70px]" value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder={choice === 'REOPEN' ? 'The problem is still happening / the response did not address it…' : 'Explain why the enterprise response is unsatisfactory…'} />
+            placeholder={choice === 'REOPEN' ? tr('The problem is still happening / the response did not address it…') : tr('Explain why the enterprise response is unsatisfactory…')} />
           <div className="flex flex-wrap items-center gap-2">
             <button className={choice === 'REOPEN' ? 'btn-ghost btn-sm' : 'btn-primary btn-sm'} disabled={busy}
               onClick={() => void submit(choice)}>
-              {busy ? 'Sending…' : choice === 'REOPEN' ? 'Confirm re-open' : 'Confirm escalation'}
+              {busy ? tr('Sending…') : choice === 'REOPEN' ? tr('Confirm re-open') : tr('Confirm escalation')}
             </button>
             <button className="btn-ghost btn-sm" disabled={busy} onClick={() => { setChoice(''); setError(''); }}>{tr("Cancel")}</button>
           </div>

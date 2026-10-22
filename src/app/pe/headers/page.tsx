@@ -47,7 +47,7 @@ export default function HeadersPage() {
           <div><label className="label">{tr("Header name")}</label><input className="input" value={form.header_name} onChange={(e) => setForm({ ...form, header_name: e.target.value })} />{errors.header_name && <p className="mt-1 text-xs text-rose-600">{errors.header_name}</p>}</div>
           <div><label className="label">{tr("Sender ID")}</label><input className="input" placeholder="ACME" value={form.sender_id} onChange={(e) => setForm({ ...form, sender_id: e.target.value })} />{errors.sender_id && <p className="mt-1 text-xs text-rose-600">{errors.sender_id}</p>}</div>
           <div><label className="label">{tr("Type")}</label><select className="input" value={form.header_type} onChange={(e) => setForm({ ...form, header_type: e.target.value })}><option value="ALPHANUMERIC">{tr("Alphanumeric")}</option><option value="NUMERIC">{tr("Numeric")}</option><option value="SHORTCODE">{tr("Shortcode")}</option></select></div>
-          <button className="btn-primary" disabled={busy}>{busy ? 'Adding…' : 'Add header'}</button>
+          <button className="btn-primary" disabled={busy}>{busy ? tr('Adding…') : tr('Add header')}</button>
         </form>
       </Card>
       <Card className="overflow-x-auto">
@@ -58,14 +58,14 @@ export default function HeadersPage() {
               {items.map((h) => (
                 <>
                   <tr key={h.id}>
-                    <td className="td font-mono text-xs">{h.header_code ?? '—'}</td><td className="td font-medium">{h.header_name}</td><td className="td">{h.sender_id}</td><td className="td">{h.header_type}</td>
+                    <td className="td font-mono text-xs">{h.header_code ?? '—'}</td><td className="td font-medium">{h.header_name}</td><td className="td">{h.sender_id}</td><td className="td">{tr(h.header_type)}</td>
                     <td className="td"><StatusPill status={h.status} /></td><td className="td">{h.remarks ?? '—'}</td>
                     <td className="td">
                       <div className="flex items-center gap-2">
                         {isEditable(h.status) && <button className="btn-ghost btn-sm" onClick={() => setEditing(editing === h.id ? '' : h.id)}>{editing === h.id ? 'Close' : 'Edit'}</button>}
                         {(h.status === 'DRAFT' || h.status === 'CLARIFICATION_REQUIRED' || h.status === 'REJECTED') && (
                           <button className="btn-ghost btn-sm" disabled={busyId === h.id} onClick={() => submit(h.id)}>
-                            {busyId === h.id ? 'Sending…' : h.status === 'DRAFT' ? 'Submit' : 'Resubmit'}
+                            {busyId === h.id ? tr('Sending…') : h.status === 'DRAFT' ? tr('Submit') : tr('Resubmit')}
                           </button>
                         )}
                         {!isEditable(h.status) && <span className="text-xs text-slate-400">{lockNote(h.status)}</span>}
@@ -111,7 +111,7 @@ function HeaderEditor({ header, onSaved }: { header: Header; onSaved: () => void
         <div><label className="label">{tr("Type")}</label><select className="input" value={d.header_type} onChange={(e) => setD({ ...d, header_type: e.target.value })}><option value="ALPHANUMERIC">{tr("Alphanumeric")}</option><option value="NUMERIC">{tr("Numeric")}</option><option value="SHORTCODE">{tr("Shortcode")}</option></select></div>
       </div>
       {err && <p className="text-xs text-rose-600">{err}</p>}
-      <button className="btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save changes'}</button>
+      <button className="btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? tr('Saving…') : tr('Save changes')}</button>
     </div>
   );
 }

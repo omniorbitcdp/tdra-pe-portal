@@ -64,7 +64,7 @@ export default function OperatorWorkbench() {
               {data.recent.map((a) => (
                 <tr key={a.id} className="tr">
                   <td className="td whitespace-nowrap text-xs text-slate-500">{new Date(a.created_at).toLocaleString()}</td>
-                  <td className="td">{a.module}</td>
+                  <td className="td">{tr(a.module)}</td>
                   <td className="td font-medium">{a.action.replace(/_/g, ' ')}</td>
                   <td className="td">
                     <span className="flex items-center gap-2">

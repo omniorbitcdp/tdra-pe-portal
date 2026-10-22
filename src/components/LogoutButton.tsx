@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -11,6 +12,6 @@ export function LogoutButton() {
       await fetch('/api/auth/logout', { method: 'POST' });
       router.push('/login');
       router.refresh();
-    }}>{busy ? 'Signing out…' : 'Sign out'}</button>
+    }}>{busy ? tr('Signing out…') : tr('Sign out')}</button>
   );
 }

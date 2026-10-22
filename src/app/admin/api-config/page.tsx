@@ -60,11 +60,11 @@ export default function ApiConfigPage() {
   }
   async function remove(id: string) {
     const res = await api(`/api/admin/providers/${id}`, { method: 'DELETE' });
-    if (!res.ok) setError(res.data.error ?? 'Delete failed'); else { setNotice(tr('Provider deleted.')); await load(); }
+    if (!res.ok) setError(tr(res.data.error ?? 'Delete failed')); else { setNotice(tr('Provider deleted.')); await load(); }
   }
 
   function safeVars(): Record<string, string> {
-    try { return JSON.parse(varsText); } catch { setError('Test variables must be valid JSON.'); return SAMPLE_VARS; }
+    try { return JSON.parse(varsText); } catch { setError(tr('Test variables must be valid JSON.')); return SAMPLE_VARS; }
   }
 
   async function sendTest(useSaved: boolean) {
@@ -73,7 +73,7 @@ export default function ApiConfigPage() {
     const body = useSaved && draft.id ? { providerId: draft.id, vars } : { provider: draft, vars };
     const res = await api<{ result: Record<string, unknown> }>('/api/admin/providers/test', { method: 'POST', body: JSON.stringify(body) });
     setTesting(false);
-    if (!res.ok) { setError(res.data.error ?? 'Test failed to run'); return; }
+    if (!res.ok) { setError(tr(res.data.error ?? 'Test failed to run')); return; }
     setResult((res.data as unknown as { result: Record<string, unknown> }).result);
   }
 
@@ -98,7 +98,7 @@ export default function ApiConfigPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold">{p.provider_name}</div>
-                      <div className="text-xs text-slate-400">{p.channel} · {p.http_method}</div>
+                      <div className="text-xs text-slate-400">{tr(p.channel)} · {p.http_method}</div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       {p.is_default && <span className="pill bg-indigo-100 text-indigo-700">{tr("default")}</span>}
@@ -117,12 +117,12 @@ export default function ApiConfigPage() {
 
         {/* Middle: editor */}
         <Card className="lg:col-span-2">
-          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">{draft.id ? 'Edit provider' : 'New provider'}</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">{draft.id ? tr('Edit provider') : tr('New provider')}</h2>
           <div className="grid gap-3 md:grid-cols-2">
-            <div><label className="label">{tr("Channel")}</label><select className="input" value={draft.channel} onChange={(e) => setDraft({ ...draft, channel: e.target.value })}>{CHANNELS.map((c) => <option key={c}>{c}</option>)}</select></div>
+            <div><label className="label">{tr("Channel")}</label><select className="input" value={draft.channel} onChange={(e) => setDraft({ ...draft, channel: e.target.value })}>{CHANNELS.map((c) => <option key={tr(c)}>{tr(c)}</option>)}</select></div>
             <div><label className="label">{tr("Provider name")}</label><input className="input" value={draft.provider_name} onChange={(e) => setDraft({ ...draft, provider_name: e.target.value })} /></div>
             <div className="md:col-span-2"><label className="label">Endpoint URL (supports {`{{vars}}`})</label><input className="input" value={draft.base_url} onChange={(e) => setDraft({ ...draft, base_url: e.target.value })} placeholder="https://api.provider.com/v1/messages" /></div>
-            <div><label className="label">{tr("Method")}</label><select className="input" value={draft.http_method} onChange={(e) => setDraft({ ...draft, http_method: e.target.value })}>{['GET', 'POST', 'PUT', 'PATCH'].map((m) => <option key={m}>{m}</option>)}</select></div>
+            <div><label className="label">{tr("Method")}</label><select className="input" value={draft.http_method} onChange={(e) => setDraft({ ...draft, http_method: e.target.value })}>{['GET', 'POST', 'PUT', 'PATCH'].map((m) => <option key={tr(m)}>{tr(m)}</option>)}</select></div>
             <div><label className="label">{tr("Timeout (ms)")}</label><input type="number" className="input" value={draft.timeout_ms} onChange={(e) => setDraft({ ...draft, timeout_ms: Number(e.target.value) })} /></div>
             <div><label className="label">{tr("Auth type")}</label><select className="input" value={draft.auth_type} onChange={(e) => setDraft({ ...draft, auth_type: e.target.value })}>{['NONE', 'BEARER', 'BASIC', 'API_KEY'].map((a) => <option key={a}>{a}</option>)}</select></div>
             <div className="flex items-end gap-4">
@@ -152,7 +152,7 @@ export default function ApiConfigPage() {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <button className="btn-primary" onClick={save}>{tr("Save provider")}</button>
-            <button className="btn-ghost" onClick={() => sendTest(false)} disabled={testing}>{testing ? 'Sending…' : 'Send test (unsaved config)'}</button>
+            <button className="btn-ghost" onClick={() => sendTest(false)} disabled={testing}>{testing ? tr('Sending…') : tr('Send test (unsaved config)')}</button>
             {draft.id && <button className="btn-ghost" onClick={() => sendTest(true)} disabled={testing}>{tr("Send test (saved)")}</button>}
           </div>
         </Card>

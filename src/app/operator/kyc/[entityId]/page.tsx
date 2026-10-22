@@ -41,8 +41,8 @@ export default function KycReview() {
   async function setDocStatus(docId: string, status: string) {
     setError(''); setNotice('');
     const res = await api('/api/operator/document', { method: 'POST', body: JSON.stringify({ docId, status, remarks: docRemarks[docId] ?? '' }) });
-    if (!res.ok) { setError(res.data.error ?? 'Could not update document'); return; }
-    setNotice('Document status updated.'); await load();
+    if (!res.ok) { setError(tr(res.data.error ?? 'Could not update document')); return; }
+    setNotice(tr('Document status updated.')); await load();
   }
   async function openDoc(docId: string) {
     const r = await api<{ url: string; document: Doc }>(`/api/pe/kyc/file?docId=${docId}`);
@@ -52,13 +52,13 @@ export default function KycReview() {
   }
   async function approveInfo(approve: boolean) {
     const res = await api('/api/operator/kyc-info', { method: 'POST', body: JSON.stringify({ entityId, approve }) });
-    if (!res.ok) setError(res.data.error ?? 'Failed'); else { setNotice(approve ? 'PE information approved.' : 'PE information approval revoked.'); await load(); }
+    if (!res.ok) setError(tr(res.data.error ?? 'Failed')); else { setNotice(approve ? 'PE information approved.' : 'PE information approval revoked.'); await load(); }
   }
   async function decide(action: string) {
     setBusy(true); setError(''); setNotice('');
     const res = await api('/api/operator/decision', { method: 'POST', body: JSON.stringify({ module: 'KYC', id: entityId, action, remarks }) });
     setBusy(false);
-    if (!res.ok) { setError(res.data.error ?? 'Failed'); return; }
+    if (!res.ok) { setError(tr(res.data.error ?? 'Failed')); return; }
     setNotice(`KYC ${action.toLowerCase().replace('_', ' ')} recorded.`); setRemarks(''); await load();
   }
 
@@ -121,7 +121,7 @@ export default function KycReview() {
                 <span className="ml-2"><StatusPill status={e.kyc_info_approved ? 'APPROVED' : 'PENDING_VERIFICATION'} /></span>
               </span>
               <button className="btn-ghost btn-sm" onClick={() => approveInfo(!e.kyc_info_approved)}>
-                {e.kyc_info_approved ? 'Revoke' : 'Approve info'}
+                {e.kyc_info_approved ? tr('Revoke') : tr('Approve info')}
               </button>
             </div>
           </Card>
@@ -136,7 +136,7 @@ export default function KycReview() {
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-slate-800">{ACTION_LABEL[h.action] ?? h.action.replace(/_/g, ' ')}</span>
                       <span className="block text-xs text-slate-500">
-                        {h.actor_name ?? h.actor_email ?? 'System'} · {new Date(h.created_at).toLocaleString()}
+                        {h.actor_name ?? h.actor_email ?? tr('System')} · {new Date(h.created_at).toLocaleString()}
                       </span>
                       {h.remarks && <span className="mt-0.5 block text-xs text-slate-600">“{h.remarks}”</span>}
                     </span>
@@ -146,7 +146,7 @@ export default function KycReview() {
             )}
             {keyHistory.length > 5 && (
               <button className="mt-3 text-xs font-semibold text-blue-700 hover:underline" onClick={() => setShowAll((v) => !v)}>
-                {showAll ? 'Show less' : `Show all ${keyHistory.length} key events`}
+                {showAll ? tr('Show less') : tr('Show all {n} key events', { n: keyHistory.length })}
               </button>
             )}
           </Card>
@@ -198,8 +198,8 @@ export default function KycReview() {
                   <div key={t} className="px-5 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-slate-800">{DOC_TYPE_LABELS[t]}</div>
-                        <div className="truncate text-xs text-slate-400">{d ? d.file_name : 'Not uploaded'}</div>
+                        <div className="text-sm font-semibold text-slate-800">{tr(DOC_TYPE_LABELS[t])}</div>
+                        <div className="truncate text-xs text-slate-400">{d ? d.file_name : tr('Not uploaded')}</div>
                       </div>
                       <div className="flex items-center gap-2">
                         <StatusPill status={d?.status ?? 'NOT_STARTED'} />

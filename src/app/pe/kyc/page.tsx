@@ -42,7 +42,7 @@ export default function KycPage() {
     const res = await apiForm('/api/pe/kyc', fd);
     setBusy('');
     if (!res.ok) { setError(res.data.error ?? tr('Upload failed')); return; }
-    setNotice(`${DOC_TYPE_LABELS[docType as keyof typeof DOC_TYPE_LABELS]} uploaded.`);
+    setNotice(`${tr(DOC_TYPE_LABELS[docType as keyof typeof DOC_TYPE_LABELS])} uploaded.`);
     await load();
   }
 
@@ -108,15 +108,15 @@ export default function KycPage() {
             <Card key={t}>
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-sm font-semibold text-slate-800">{DOC_TYPE_LABELS[t]}</div>
-                  <div className="mt-1 text-xs text-slate-400">{d ? `${d.file_name} · ${(d.size_bytes / 1024 / 1024).toFixed(2)} MB` : 'Not uploaded'}</div>
+                  <div className="text-sm font-semibold text-slate-800">{tr(DOC_TYPE_LABELS[t])}</div>
+                  <div className="mt-1 text-xs text-slate-400">{d ? `${d.file_name} · ${(d.size_bytes / 1024 / 1024).toFixed(2)} MB` : tr('Not uploaded')}</div>
                 </div>
                 <StatusPill status={d?.status ?? 'NOT_STARTED'} />
               </div>
               {d?.remarks && <p className="mt-3 rounded bg-amber-50 px-3 py-2 text-xs text-amber-800">{d.remarks}</p>}
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <label className="btn-ghost cursor-pointer">
-                  {busy === t ? 'Uploading…' : d ? 'Replace / resubmit' : 'Upload'}
+                  {busy === t ? tr('Uploading…') : d ? tr('Replace / resubmit') : tr('Upload')}
                   <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(t, f); e.target.value = ''; }} />
                 </label>

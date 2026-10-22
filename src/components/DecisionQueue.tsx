@@ -55,7 +55,7 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
     setBusyId(id); setError(''); setNotice('');
     const res = await api('/api/operator/decision', { method: 'POST', body: JSON.stringify({ module, id, action, remarks: remarks[id] ?? '' }) });
     setBusyId('');
-    if (!res.ok) { setError(res.data.error ?? 'Failed'); return; }
+    if (!res.ok) { setError(tr(res.data.error ?? 'Failed')); return; }
     setNotice(`${module.charAt(0)}${module.slice(1).toLowerCase()} ${action.toLowerCase().replace('_', ' ')} recorded.`);
     await load();
   }
@@ -82,7 +82,7 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
   const detail = (r: Row) => module === 'HEADER'
     ? <div><div className="font-medium text-slate-800">{r.header_name}</div><div className="text-xs text-slate-400">Sender ID {r.sender_id} · {String(r.header_type ?? '')}</div></div>
     : module === 'TEMPLATE'
-      ? <div><div className="font-medium text-slate-800">{r.template_name}</div><div className="text-xs text-slate-400">{r.category} · SMS</div><button className="mt-1 text-xs font-semibold text-blue-700 hover:underline" onClick={() => setOpen({ ...open, [r.id]: !open[r.id] })}>{open[r.id] ? 'Hide message' : 'View message & sample content'}</button></div>
+      ? <div><div className="font-medium text-slate-800">{r.template_name}</div><div className="text-xs text-slate-400">{tr(String(r.category ?? ''))} · SMS</div><button className="mt-1 text-xs font-semibold text-blue-700 hover:underline" onClick={() => setOpen({ ...open, [r.id]: !open[r.id] })}>{open[r.id] ? tr('Hide message') : tr('View message & sample content')}</button></div>
       : <div className="max-w-[420px]"><div className="break-all font-medium text-slate-800">{r.url}</div><div className="text-xs text-slate-400">{String(r.method ?? '')} · {String(r.callback_type ?? '')}</div></div>;
 
   return (
@@ -126,7 +126,7 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
                     <td className="td whitespace-nowrap font-mono text-xs">{String(r.header_code ?? r.template_code ?? r.url_code ?? '—')}</td>
                     <td className="td font-medium">{r.entity_name}</td>
                     <td className="td">{detail(r)}</td>
-                    <td className="td"><StatusPill status={r.status} /></td>
+                    <td className="td"><StatusPill status={tr(r.status)} /></td>
                     <td className="td max-w-[220px] text-xs text-slate-500">{r.remarks ?? '—'}</td>
                     <td className="td">
                       {actionable(r.status) ? (

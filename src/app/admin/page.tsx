@@ -21,8 +21,8 @@ export default function AdminOverview() {
       <PageHeader title={tr("Platform Overview")} subtitle={tr("Administrative summary (least-privilege, audited)")} />
       <div className="grid gap-4 md:grid-cols-4">
         {tiles.map(([label, value]) => (
-          <Card key={label}>
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</div>
+          <Card key={tr(label)}>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">{tr(label)}</div>
             <div className="mt-2 text-3xl font-bold text-slate-900">{value}</div>
           </Card>
         ))}

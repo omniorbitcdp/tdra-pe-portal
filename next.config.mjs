@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: { serverActions: { bodySizeLimit: '12mb' } }
+  // Trim the response envelope and keep payloads compressed at the edge.
+  poweredByHeader: false,
+  compress: true,
+  experimental: { serverActions: { bodySizeLimit: '12mb' } },
 };
 export default nextConfig;

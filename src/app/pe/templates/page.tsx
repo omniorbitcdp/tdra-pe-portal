@@ -143,7 +143,7 @@ export default function TemplatesPage() {
                         {isEditable(t.status) && <button className="btn-ghost btn-sm" onClick={() => setEditing(editing === t.id ? '' : t.id)}>{editing === t.id ? 'Close' : 'Edit'}</button>}
                         {(t.status === 'DRAFT' || t.status === 'CLARIFICATION_REQUIRED' || t.status === 'REJECTED') && (
                           <button className="btn-ghost btn-sm" disabled={busyId === t.id} onClick={() => submit(t.id)}>
-                            {busyId === t.id ? 'Sending…' : t.status === 'DRAFT' ? 'Submit' : 'Resubmit'}
+                            {busyId === t.id ? tr('Sending…') : t.status === 'DRAFT' ? tr('Submit') : tr('Resubmit')}
                           </button>
                         )}
                         {!isEditable(t.status) && <span className="text-xs text-slate-400">{lockNote(t.status)}</span>}
@@ -240,7 +240,7 @@ function TemplateEditor({ tpl, onSaved }: { tpl: Tpl; onSaved: () => void | Prom
         </div>
       )}
       {err && <p className="text-xs text-rose-600">{err}</p>}
-      <button className="btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save changes'}</button>
+      <button className="btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? tr('Saving…') : tr('Save changes')}</button>
     </div>
   );
 }

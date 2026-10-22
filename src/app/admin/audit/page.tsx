@@ -66,7 +66,7 @@ export default function AuditPage() {
           <div className="flex flex-wrap items-end gap-3 px-5 pt-4">
             <div><div className="label">{tr("Module")}</div>
               <select className="input max-w-[170px]" value={module} onChange={(e) => setModule(e.target.value)}>
-                {MODULES.map((m) => <option key={m} value={m}>{m || 'All modules'}</option>)}
+                {MODULES.map((m) => <option key={tr(m)} value={tr(m)}>{tr(m) || tr('All modules')}</option>)}
               </select></div>
             <div><div className="label">{tr("Action")}</div>
               <select className="input max-w-[200px]" value={action} onChange={(e) => setAction(e.target.value)}>
@@ -105,7 +105,7 @@ export default function AuditPage() {
                         </span>
                       </span>
                     </td>
-                    <td className="td text-xs">{r.module}</td>
+                    <td className="td text-xs">{tr(r.module)}</td>
                     <td className="td">
                       <span className={`pill ring-1 ring-inset ${DECISION_ACTIONS.includes(r.action) ? 'bg-indigo-50 text-indigo-700 ring-indigo-200' : 'bg-slate-100 text-slate-600 ring-slate-200'}`}>
                         {r.action.replace(/_/g, ' ')}

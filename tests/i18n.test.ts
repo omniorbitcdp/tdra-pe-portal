@@ -1,6 +1,9 @@
 /** Bilingual integrity: the Arabic dictionary must actually cover the UI. */
 import { describe, it, expect } from 'vitest';
 import { AR, LANGS, LANG_LABELS, translate, dirFor, isLang } from '@/lib/i18n';
+import { STATUS_LABELS, DATA_LABELS } from '@/lib/labels';
+import { REG_STATUSES, DOC_STATUSES } from '@/lib/constants';
+import { GRIEVANCE_STATUSES } from '@/lib/grievance';
 
 const keys = Object.keys(AR);
 
@@ -65,5 +68,40 @@ describe('i18n: dictionary quality', () => {
       return tokens.some((tok) => !AR[k].includes(tok));
     });
     expect(broken, `lost placeholders: ${broken.join(' | ')}`).toEqual([]);
+  });
+});
+
+describe('i18n: values stored in the database', () => {
+  // Entity types, emirates, industries, channels, modules and template categories
+  // are written to Postgres as English strings and rendered straight from the row.
+  // Every one of them must have an Arabic label.
+  it('translates every entity type, emirate, industry, channel, module and category', () => {
+    const missing: string[] = [];
+    for (const list of [DATA_LABELS.entityType, DATA_LABELS.industry, DATA_LABELS.emirate,
+      DATA_LABELS.channel, DATA_LABELS.module, DATA_LABELS.templateCategory]) {
+      for (const value of list) {
+        if (!/[\u0600-\u06FF]/.test(translate('ar', value))) missing.push(value);
+      }
+    }
+    expect(missing, `untranslated DB values: ${missing.join(' | ')}`).toEqual([]);
+  });
+
+  it('labels every status the schema can store', () => {
+    const statuses = [
+      ...REG_STATUSES, ...DOC_STATUSES, ...GRIEVANCE_STATUSES,
+      'ACTIVE', 'LOCKED', 'DISABLED', 'SENT', 'FAILED', 'SKIPPED', 'NOT_STARTED',
+    ];
+    const missing = statuses.filter((st) => {
+      const label = STATUS_LABELS[st];
+      if (!label) return true;
+      return !/[\u0600-\u06FF]/.test(translate('ar', label));
+    });
+    expect(missing, `untranslated statuses: ${missing.join(' | ')}`).toEqual([]);
+  });
+
+  it('renders a raw status value through the shared label table', () => {
+    expect(translate('ar', STATUS_LABELS.UNDER_REVIEW)).toBe('قيد المراجعة');
+    expect(translate('ar', STATUS_LABELS.CLOSED)).toBe('مغلق');
+    expect(translate('ar', STATUS_LABELS.VERIFIED)).toBe('تم التحقق');
   });
 });

@@ -16,7 +16,7 @@ export default function AdminSettings() {
 
   function onLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return;
-    if (f.size > 1_500_000) { setError('Logo must be under ~1.5 MB.'); return; }
+    if (f.size > 1_500_000) { setError(tr('Logo must be under ~1.5 MB.')); return; }
     const reader = new FileReader();
     reader.onload = () => set('logoDataUrl', String(reader.result));
     reader.readAsDataURL(f);
@@ -31,7 +31,7 @@ export default function AdminSettings() {
     }) });
     setBusy(false);
     if (!res.ok) { setError(res.data.error ?? tr('Could not save')); return; }
-    setNotice('Settings saved. Reload the page to see the new branding.');
+    setNotice(tr('Settings saved. Reload the page to see the new branding.'));
   }
 
   if (error && !settings) return <ErrorBox message={error} />;
@@ -71,7 +71,7 @@ export default function AdminSettings() {
           {settings.logoDataUrl && <button className="mt-3 text-xs text-rose-600" onClick={() => set('logoDataUrl', null)}>{tr("Remove logo")}</button>}
         </Card>
       </div>
-      <button className="btn-primary mt-5" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save settings'}</button>
+      <button className="btn-primary mt-5" disabled={busy} onClick={save}>{busy ? tr('Saving…') : tr('Save settings')}</button>
     </div>
   );
 }

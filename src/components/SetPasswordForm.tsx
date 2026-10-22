@@ -31,7 +31,7 @@ export function SetPasswordForm({ token }: { token: string }) {
       {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
       <div><label className="label">{tr("New password")}</label><input type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
       <div><label className="label">{tr("Confirm password")}</label><input type="password" className="input" value={confirm} onChange={(e) => setConfirm(e.target.value)} required /></div>
-      <button className="btn-primary w-full" disabled={busy}>{busy ? 'Saving…' : 'Reset password'}</button>
+      <button className="btn-primary w-full" disabled={busy}>{busy ? tr('Saving…') : tr('Reset password')}</button>
     </form>
   );
 }

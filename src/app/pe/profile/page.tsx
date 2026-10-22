@@ -42,11 +42,11 @@ export default function ProfilePage() {
 
   const F = (label: string, key: string, type = 'text', opts?: string[]) => (
     <div>
-      <label className="label">{label}</label>
+      <label className="label">{tr(label)}</label>
       {opts ? (
         <select className="input" value={form[key]} onChange={(e) => set(key, e.target.value)}>
           <option value="">{tr("Select…")}</option>
-          {opts.map((o) => <option key={o} value={o}>{o}</option>)}
+          {opts.map((o) => <option key={o} value={o}>{tr(o)}</option>)}
         </select>
       ) : (
         <input type={type} className="input" value={form[key]} onChange={(e) => set(key, e.target.value)} />
@@ -104,7 +104,7 @@ export default function ProfilePage() {
           </div>
         </Card>
 
-        <button className="btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save details'}</button>
+        <button className="btn-primary" disabled={busy}>{busy ? tr('Saving…') : tr('Save details')}</button>
       </form>
     </div>
   );

@@ -30,7 +30,7 @@ export default function AdminUsers() {
     if (!res.ok) setError(res.data.error ?? tr('Update failed')); else { setNotice(tr('User updated.')); await load(); }
   }
   async function resetPassword(id: string) {
-    const pw = window.prompt('New password (min 10 chars, upper/lower/digit/symbol):');
+    const pw = window.prompt(tr('New password (min 10 chars, upper/lower/digit/symbol):'));
     if (!pw) return;
     await patch(id, { password: pw });
   }

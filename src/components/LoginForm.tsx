@@ -74,7 +74,7 @@ export function LoginForm() {
             value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
           <button type="button" onClick={() => setShowPw(!showPw)}
             className="absolute inset-y-0 right-2 my-auto h-7 rounded-md px-2 text-[11px] font-semibold text-slate-500 hover:bg-slate-100">
-            {showPw ? 'Hide' : 'Show'}
+            {showPw ? tr('Hide') : tr('Show')}
           </button>
         </div>
       </div>

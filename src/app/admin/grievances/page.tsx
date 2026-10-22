@@ -81,7 +81,7 @@ export default function AdminGrievancesPage() {
     const res = await api('/api/admin/grievances', { method: 'POST', body: JSON.stringify({ id, action, remarks }) });
     setBusyId('');
     if (!res.ok) { setError(res.data.error ?? tr('Could not update the grievance')); return; }
-    setNotice(`Grievance ${PAST[action] ?? action.toLowerCase()}.`);
+    setNotice(tr('Grievance updated: {what}', { what: tr(PAST[action] ?? action) }));
     setOpenId('');
     await load();
   }
@@ -105,7 +105,7 @@ export default function AdminGrievancesPage() {
           {([['ESCALATED', 'Escalated'], ['OPEN', 'Open'], ['UNMATCHED', 'Unmatched'], ['ALL', 'All']] as Array<[Tab, string]>).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold ${tab === k ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-              {label} ({count[k]})
+              {tr(label)} ({count[k]})
             </button>
           ))}
           <button className="ml-auto text-xs font-semibold text-blue-700 hover:underline" onClick={() => void load()}>{tr("Refresh")}</button>
@@ -133,7 +133,7 @@ export default function AdminGrievancesPage() {
                       </td>
                       <td className="td">
                         <button className="btn-ghost btn-sm" onClick={() => setOpenId(openId === g.id ? '' : g.id)}>
-                          {openId === g.id ? 'Hide' : 'Open'}
+                          {openId === g.id ? tr('Hide') : tr('Open')}
                         </button>
                       </td>
                     </tr>
@@ -180,7 +180,7 @@ function Detail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: GrievanceA
         {g.highlighted_phone && <span>Phone: {g.highlighted_phone}</span>}
         {g.attachment_path && (
           <a className="font-semibold text-blue-700 hover:underline" target="_blank" rel="noreferrer"
-            href={`/api/grievances/attachment?id=${g.id}`}>{g.attachment_name ?? 'Screenshot'}</a>
+            href={`/api/grievances/attachment?id=${g.id}`}>{g.attachment_name ?? tr('Screenshot')}</a>
         )}
       </div>
 

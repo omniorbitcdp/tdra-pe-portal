@@ -90,7 +90,7 @@ export default function PeGrievancesPage() {
     const res = await api('/api/pe/grievances', { method: 'POST', body: JSON.stringify({ id, action, remarks }) });
     setBusyId('');
     if (!res.ok) { setError(res.data.error ?? tr('Could not update the grievance')); return; }
-    setNotice(`Grievance ${PAST[action] ?? action.toLowerCase()}.`);
+    setNotice(tr('Grievance updated: {what}', { what: tr(PAST[action] ?? action) }));
     setOpenId('');
     await load();
   }
@@ -113,7 +113,7 @@ export default function PeGrievancesPage() {
           {([['OPEN', 'Open'], ['ESCALATED', 'Escalated'], ['CONCLUDED', 'Concluded'], ['ALL', 'All']] as Array<[Tab, string]>).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold ${tab === k ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-              {label} ({count[k]})
+              {tr(label)} ({count[k]})
             </button>
           ))}
           <button className="ml-auto text-xs font-semibold text-blue-700 hover:underline" onClick={() => void load()}>{tr("Refresh")}</button>
@@ -143,7 +143,7 @@ export default function PeGrievancesPage() {
                       <td className="td"><StatusPill status={g.status} label={tr(GRIEVANCE_STATUS_LABELS[g.status] ?? g.status)} /></td>
                       <td className="td">
                         <button className="btn-ghost btn-sm" onClick={() => setOpenId(openId === g.id ? '' : g.id)}>
-                          {openId === g.id ? 'Hide' : 'Open'}
+                          {openId === g.id ? tr('Hide') : tr('Open')}
                         </button>
                       </td>
                     </tr>
@@ -196,7 +196,7 @@ function GrievanceDetail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: G
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Screenshot")}</div>
               <a className="text-sm font-semibold text-blue-700 hover:underline" target="_blank" rel="noreferrer"
-                href={`/api/grievances/attachment?id=${g.id}`}>{g.attachment_name ?? 'Open screenshot'}</a>
+                href={`/api/grievances/attachment?id=${g.id}`}>{g.attachment_name ?? tr('Open screenshot')}</a>
             </div>
           )}
           <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Matched by")}</div><p className="text-xs text-slate-600">{g.match_method.replace(/_/g, ' ').toLowerCase()}</p></div>
@@ -235,7 +235,7 @@ function GrievanceDetail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: G
       {actions.length === 0 ? (
         <p className="border-t border-slate-200 pt-3 text-xs text-slate-500">
           {g.status === 'ESCALATED'
-            ? 'With the platform administrator — you can respond again once it is returned to you.'
+            ? tr('With the platform administrator — you can respond again once it is returned to you.')
             : `This grievance is ${GRIEVANCE_STATUS_LABELS[g.status]?.toLowerCase() ?? g.status.toLowerCase()} — no action is needed from you.`}
         </p>
       ) : (

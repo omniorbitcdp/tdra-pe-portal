@@ -76,7 +76,7 @@ export default function UrlsPage() {
                         {isEditable(u.status) && <button className="btn-ghost btn-sm" onClick={() => setEditing(editing === u.id ? '' : u.id)}>{editing === u.id ? 'Close' : 'Edit'}</button>}
                         {(u.status === 'DRAFT' || u.status === 'CLARIFICATION_REQUIRED' || u.status === 'REJECTED') && (
                           <button className="btn-ghost btn-sm" disabled={busyId === u.id} onClick={() => submit(u.id)}>
-                            {busyId === u.id ? 'Sending…' : u.status === 'DRAFT' ? 'Submit' : 'Resubmit'}
+                            {busyId === u.id ? tr('Sending…') : u.status === 'DRAFT' ? tr('Submit') : tr('Resubmit')}
                           </button>
                         )}
                         {!isEditable(u.status) && <span className="text-xs text-slate-400">{lockNote(u.status)}</span>}
@@ -122,7 +122,7 @@ function UrlEditor({ url, templates, onSaved }: { url: Url; templates: Tpl[]; on
         <div><label className="label">{tr("Template")}</label><select className="input" value={d.template_id} onChange={(e) => setD({ ...d, template_id: e.target.value })}>{templates.map((t) => <option key={t.id} value={t.id}>{t.template_name}</option>)}</select>{errors.template_id && <p className="mt-1 text-xs text-rose-600">{errors.template_id}</p>}</div>
       </div>
       {err && <p className="text-xs text-rose-600">{err}</p>}
-      <button className="btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save changes'}</button>
+      <button className="btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? tr('Saving…') : tr('Save changes')}</button>
     </div>
   );
 }

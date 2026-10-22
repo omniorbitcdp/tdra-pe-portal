@@ -1,6 +1,8 @@
 // Shared presentational kit. Designed for dense operational screens: clear
 // hierarchy, scannable status, consistent spacing.
 import React from 'react';
+import { t as tr } from '@/lib/i18n/live';
+import { STATUS_LABELS } from '@/lib/labels';
 
 export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <div className={`card p-5 ${className}`}>{children}</div>;
@@ -59,7 +61,9 @@ const STATUS_STYLES: Record<string, string> = {
 
 export function StatusPill({ status, label, className = '' }: { status: string; label?: string; className?: string }) {
   const cls = STATUS_STYLES[status] ?? 'bg-slate-100 text-slate-600 ring-slate-200';
-  return <span className={`pill ring-1 ring-inset ${cls} ${className}`}>{label ?? status.replace(/_/g, ' ')}</span>;
+  // Translating here means every table in the portal is covered at once.
+  const text = label ?? STATUS_LABELS[status] ?? status.replace(/_/g, ' ');
+  return <span className={`pill ring-1 ring-inset ${cls} ${className}`}>{tr(text)}</span>;
 }
 
 export function Empty({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {

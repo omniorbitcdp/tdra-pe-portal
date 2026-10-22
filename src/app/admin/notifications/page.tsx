@@ -19,7 +19,7 @@ export default function NotificationsPage() {
     <div>
       <PageHeader title={tr("Notification Log")} subtitle={tr("Event, channel, recipient, provider message id and delivery result")} />
       <ErrorBox message={error} />
-      <div className="mb-4"><select className="input max-w-[200px]" value={channel} onChange={(e) => setChannel(e.target.value)}><option value="">{tr("All channels")}</option>{['EMAIL', 'SMS', 'WHATSAPP'].map((c) => <option key={c}>{c}</option>)}</select></div>
+      <div className="mb-4"><select className="input max-w-[200px]" value={channel} onChange={(e) => setChannel(e.target.value)}><option value="">{tr("All channels")}</option>{['EMAIL', 'SMS', 'WHATSAPP'].map((c) => <option key={tr(c)}>{tr(c)}</option>)}</select></div>
       <Card className="overflow-x-auto">
         {rows.length === 0 ? <Empty>{tr("No notifications logged.")}</Empty> : (
           <table className="w-full">
@@ -27,8 +27,8 @@ export default function NotificationsPage() {
             <tbody>{rows.map((r) => (
               <tr key={r.id}>
                 <td className="td whitespace-nowrap text-xs">{new Date(r.created_at).toLocaleString()}</td>
-                <td className="td">{r.event}</td><td className="td">{r.channel}</td><td className="td">{r.recipient}</td>
-                <td className="td"><StatusPill status={r.status} /></td><td className="td">{r.http_status ?? '—'}</td>
+                <td className="td">{tr(r.event)}</td><td className="td">{tr(r.channel)}</td><td className="td">{r.recipient}</td>
+                <td className="td"><StatusPill status={tr(r.status)} /></td><td className="td">{r.http_status ?? '—'}</td>
                 <td className="td text-xs">{r.provider_message_id ?? '—'}</td><td className="td text-xs text-rose-600">{r.error ?? ''}</td>
               </tr>
             ))}</tbody>
