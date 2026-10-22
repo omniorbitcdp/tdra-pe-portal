@@ -1,5 +1,6 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
+import { fmtDateTime } from '@/lib/datetime';
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, Empty, Avatar, Toolbar, StatCard, StatGrid } from '@/components/ui';
@@ -95,7 +96,7 @@ export default function AuditPage() {
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id} className="tr">
-                    <td className="td whitespace-nowrap text-xs text-slate-500">{new Date(r.created_at).toLocaleString()}</td>
+                    <td className="td whitespace-nowrap text-xs text-slate-500"><span className="ltr-inline">{fmtDateTime(r.created_at)}</span></td>
                     <td className="td">
                       <span className="flex items-center gap-2">
                         <Avatar name={r.actor_name ?? r.actor_email ?? 'System'} size="sm" />
@@ -108,7 +109,7 @@ export default function AuditPage() {
                     <td className="td text-xs">{tr(r.module)}</td>
                     <td className="td">
                       <span className={`pill ring-1 ring-inset ${DECISION_ACTIONS.includes(r.action) ? 'bg-indigo-50 text-indigo-700 ring-indigo-200' : 'bg-slate-100 text-slate-600 ring-slate-200'}`}>
-                        {r.action.replace(/_/g, ' ')}
+                        {tr(r.action.replace(/_/g, ' '))}
                       </span>
                     </td>
                     <td className="td space-x-1 whitespace-nowrap text-xs">
@@ -116,7 +117,7 @@ export default function AuditPage() {
                       {r.from_status && <span className="text-slate-300">→</span>}
                       <span className="font-semibold text-slate-700">{r.to_status?.replace(/_/g, ' ') ?? '—'}</span>
                     </td>
-                    <td className="td max-w-[320px] text-xs text-slate-600">{r.remarks ?? '—'}</td>
+                    <td className="td max-w-[280px] text-xs text-slate-500" dir="auto">{r.remarks ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

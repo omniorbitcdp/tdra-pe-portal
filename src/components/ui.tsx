@@ -131,7 +131,7 @@ export function Stepper({ steps }: { steps: Array<{ label: string; status: strin
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
           <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${(done / steps.length) * 100}%` }} />
         </div>
-        <span className="text-xs font-semibold text-slate-500">{done}/{steps.length} complete</span>
+        <span className="text-xs font-semibold text-slate-500">{tr('{done}/{total} complete', { done, total: steps.length })}</span>
       </div>
       <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((s, i) => {

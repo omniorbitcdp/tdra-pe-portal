@@ -1,5 +1,6 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
+import { fmtDate, fmtDateTime } from '@/lib/datetime';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/client';
@@ -136,7 +137,7 @@ export default function KycReview() {
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-slate-800">{ACTION_LABEL[h.action] ?? h.action.replace(/_/g, ' ')}</span>
                       <span className="block text-xs text-slate-500">
-                        {h.actor_name ?? h.actor_email ?? tr('System')} · {new Date(h.created_at).toLocaleString()}
+                        {h.actor_name ?? h.actor_email ?? tr('System')} · {fmtDateTime(h.created_at)}
                       </span>
                       {h.remarks && <span className="mt-0.5 block text-xs text-slate-600">“{h.remarks}”</span>}
                     </span>

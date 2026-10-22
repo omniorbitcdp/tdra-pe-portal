@@ -1,5 +1,6 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
+import { fmtDate, fmtDateTime } from '@/lib/datetime';
 import { useEffect, useState } from 'react';
 import { api, apiForm } from '@/lib/client';
 import { StatusPill } from '@/components/ui';
@@ -115,7 +116,7 @@ function RaiseForm({ maxFileMb, onTrack }: { maxFileMb: number; onTrack: () => v
             ? <>{tr("Routed to")} <strong>{done.enterprise}</strong> {tr("— the owner of that header.")}</>
             : <>{tr("No registered header matched, so this has gone to the platform administrator for review.")}</>}
         </p>
-        <p className="mt-1 text-xs text-slate-500">Target response by {new Date(done.sla).toLocaleString()}.</p>
+        <p className="mt-1 text-xs text-slate-500">Target response by {fmtDateTime(done.sla)}.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button className="btn-primary" onClick={onTrack}>{tr("Track this grievance")}</button>
           <a className="btn-ghost" href="/grievance">{tr("Raise another")}</a>
@@ -275,7 +276,7 @@ function TrackResultCard({ r, contact, onChanged }: { r: TrackResult; contact: s
         <div>
           <div className="font-mono text-lg font-bold tracking-wide text-slate-900">{r.grievance_code}</div>
           <div className="mt-1 text-xs text-slate-500">
-            Filed {new Date(r.created_at).toLocaleString()}
+            Filed {fmtDateTime(r.created_at)}
             {r.enterprise ? <> {tr("· routed to")} <strong>{r.enterprise}</strong></> : ' · with the platform administrator'}
           </div>
         </div>
@@ -292,7 +293,7 @@ function TrackResultCard({ r, contact, onChanged }: { r: TrackResult; contact: s
               t.done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{t.done ? '✓' : '·'}</span>
             <span>
               <span className={`block text-sm font-semibold ${t.done ? 'text-slate-800' : 'text-slate-400'}`}>{tr(t.label)}</span>
-              {t.at && <span className="block text-[11px] text-slate-500">{new Date(t.at).toLocaleString()}</span>}
+              {t.at && <span className="block text-[11px] text-slate-500">{fmtDateTime(t.at)}</span>}
             </span>
           </li>
         ))}
@@ -302,7 +303,7 @@ function TrackResultCard({ r, contact, onChanged }: { r: TrackResult; contact: s
         <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
           <div className="text-[11px] font-bold uppercase tracking-wide text-indigo-700">{tr("Escalated to the platform administrator")}</div>
           <p className="mt-1 text-sm text-slate-800">{r.escalation_reason}</p>
-          {r.escalated_at && <p className="mt-1 text-[11px] text-slate-500">{new Date(r.escalated_at).toLocaleString()}</p>}
+          {r.escalated_at && <p className="mt-1 text-[11px] text-slate-500">{fmtDateTime(r.escalated_at)}</p>}
         </div>
       )}
 
@@ -310,7 +311,7 @@ function TrackResultCard({ r, contact, onChanged }: { r: TrackResult; contact: s
         <div className="mt-5 rounded-lg border border-amber-100 bg-amber-50/60 p-3">
           <div className="text-[11px] font-bold uppercase tracking-wide text-amber-800">{tr("Returned to the enterprise for justification")}</div>
           <p className="mt-1 text-sm text-slate-800">{r.return_reason}</p>
-          {r.returned_at && <p className="mt-1 text-[11px] text-slate-500">{new Date(r.returned_at).toLocaleString()}</p>}
+          {r.returned_at && <p className="mt-1 text-[11px] text-slate-500">{fmtDateTime(r.returned_at)}</p>}
         </div>
       )}
 
@@ -324,14 +325,14 @@ function TrackResultCard({ r, contact, onChanged }: { r: TrackResult; contact: s
       {(r.reopen_count > 0 || r.reopened_at) && (
         <p className="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900">
           Re-opened {r.reopen_count === 1 ? 'once' : `${r.reopen_count} times`}
-          {r.reopened_at ? ` — latest on ${new Date(r.reopened_at).toLocaleString()}` : ''}.
+          {r.reopened_at ? ` — latest on ${fmtDateTime(r.reopened_at)}` : ''}.
           {r.reopen_reason ? ` Reason given: ${r.reopen_reason}` : ''}
         </p>
       )}
 
       <dl className="mt-6 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
         <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Header reported")}</dt><dd className="text-sm font-medium text-slate-800">{r.reported_header}</dd></div>
-        <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Target resolution")}</dt><dd className="text-sm text-slate-800">{new Date(r.sla_due_at).toLocaleString()}</dd></div>
+        <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Target resolution")}</dt><dd className="text-sm text-slate-800">{fmtDateTime(r.sla_due_at)}</dd></div>
         {r.highlighted_url && <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Suspicious URL")}</dt><dd className="break-all text-sm text-slate-800">{r.highlighted_url}</dd></div>}
         {r.highlighted_phone && <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Phone highlighted")}</dt><dd className="text-sm text-slate-800">{r.highlighted_phone}</dd></div>}
         <div className="sm:col-span-2"><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Message you reported")}</dt><dd className="whitespace-pre-wrap text-sm text-slate-700">{r.message_content}</dd></div>

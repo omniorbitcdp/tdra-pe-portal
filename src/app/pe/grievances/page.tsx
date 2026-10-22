@@ -1,5 +1,6 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
+import { fmtDate, fmtDateTime } from '@/lib/datetime';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid } from '@/components/ui';
@@ -132,7 +133,7 @@ export default function PeGrievancesPage() {
                       <td className="td whitespace-nowrap font-mono text-xs">{g.grievance_code}</td>
                       <td className="td font-medium">{g.reported_header}</td>
                       <td className="td text-xs">{g.category}</td>
-                      <td className="td whitespace-nowrap text-xs text-slate-500">{new Date(g.created_at).toLocaleDateString()}</td>
+                      <td className="td whitespace-nowrap text-xs text-slate-500">{fmtDate(g.created_at)}</td>
                       <td className="td text-xs">
                         {GRIEVANCE_CONCLUDED.includes(g.status) || g.status === 'ESCALATED'
                           ? <span className="text-slate-400">—</span>
@@ -207,7 +208,7 @@ function GrievanceDetail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: G
         <div className="rounded border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
           <strong>{tr("Escalated to the platform administrator")}</strong>
           {g.escalated_by_role ? <> by {g.escalated_by_role.replace(/_/g, ' ').toLowerCase()}</> : null}
-          {' '}on {new Date(g.escalated_at).toLocaleString()}.
+          {' '}on {fmtDateTime(g.escalated_at)}.
           {g.escalation_reason && <span className="mt-1 block text-indigo-800">Reason: {g.escalation_reason}</span>}
         </div>
       )}
@@ -215,7 +216,7 @@ function GrievanceDetail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: G
       {g.return_reason && (
         <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           <strong>{tr("Returned to you for justification")}</strong>
-          {g.returned_at ? <> on {new Date(g.returned_at).toLocaleString()}</> : null}.
+          {g.returned_at ? <> on {fmtDateTime(g.returned_at)}</> : null}.
           <span className="mt-1 block text-amber-800">Administrator note: {g.return_reason}</span>
         </div>
       )}
@@ -223,7 +224,7 @@ function GrievanceDetail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: G
       {(g.reopen_count ?? 0) > 0 && (
         <div className="rounded border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
           Re-opened by the reporter {(g.reopen_count ?? 0) === 1 ? 'once' : `${g.reopen_count} times`}
-          {g.reopened_at ? <> — latest on {new Date(g.reopened_at).toLocaleString()}</> : null}.
+          {g.reopened_at ? <> — latest on {fmtDateTime(g.reopened_at)}</> : null}.
           {g.reopen_reason && <span className="mt-1 block text-sky-800">Reason given: {g.reopen_reason}</span>}
         </div>
       )}

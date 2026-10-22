@@ -5,6 +5,7 @@ import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid, Avatar } from 
 import { MANDATORY_DOC_TYPES, REG_STATUS_LABELS } from '@/lib/constants';
 import { getLang } from '@/lib/i18n/server';
 import { translate } from '@/lib/i18n';
+import { fmtDate } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,7 +93,7 @@ export default async function KycQueue() {
                             <Avatar name={last.actor_name ?? last.actor_email ?? 'System'} size="sm" />
                             <span className="min-w-0">
                               <span className="block truncate text-xs font-semibold text-slate-700">{last.actor_name ?? last.actor_email}</span>
-                              <span className="block text-[10px] text-slate-400">{last.action.replace(/_/g, ' ')} · {new Date(last.created_at).toLocaleDateString()}</span>
+                              <span className="block text-[10px] text-slate-400">{last.action.replace(/_/g, ' ')} · {fmtDate(last.created_at)}</span>
                             </span>
                           </span>
                         ) : <span className="text-xs text-slate-400">—</span>}

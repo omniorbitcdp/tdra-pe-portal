@@ -1,5 +1,6 @@
 /** The brand / story panel shared by the sign-in and business-registration
  *  screens, so the two entry points stay visually identical. */
+import { t as tr } from '@/lib/i18n/live';
 
 export interface Brand { name: string; short: string; logo: string | null }
 
@@ -53,21 +54,20 @@ export function AuthBrandPanel({ brand }: { brand: Brand }) {
 
       <div className="relative max-w-xl">
         <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-blue-700 ring-1 ring-blue-100">
-          Business Communication Platform
+          {tr('Business Communication Platform')}
         </span>
-        <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-slate-900">{AUTH_HEADLINE}</h1>
+        <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-slate-900">{tr(AUTH_HEADLINE)}</h1>
         <p className="mt-4 text-sm leading-relaxed text-slate-600">
-          A secure and compliant platform that streamlines your business registration and commercial messaging,
-          while ensuring regulatory adherence at every step.
+          {tr('A secure and compliant platform that streamlines your business registration and commercial messaging, while ensuring regulatory adherence at every step.')}
         </p>
 
         <ul className="mt-8 space-y-3.5">
           {HIGHLIGHTS.map((h) => (
-            <li key={h.title} className="flex gap-3">
+            <li key={tr(h.title)} className="flex gap-3">
               <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">✓</span>
               <span>
-                <span className="block text-sm font-semibold text-slate-800">{h.title}</span>
-                <span className="block text-xs leading-relaxed text-slate-500">{h.body}</span>
+                <span className="block text-sm font-semibold text-slate-800">{tr(h.title)}</span>
+                <span className="block text-xs leading-relaxed text-slate-500">{tr(h.body)}</span>
               </span>
             </li>
           ))}

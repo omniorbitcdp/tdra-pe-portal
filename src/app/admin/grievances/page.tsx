@@ -1,5 +1,6 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
+import { fmtDate, fmtDateTime } from '@/lib/datetime';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid } from '@/components/ui';
@@ -125,7 +126,7 @@ export default function AdminGrievancesPage() {
                       <td className="td font-medium">{g.reported_header}</td>
                       <td className="td text-xs">{g.enterprise ?? <span className="text-amber-700">{tr("Unmatched")}</span>}</td>
                       <td className="td"><StatusPill status={g.status} label={tr(GRIEVANCE_STATUS_LABELS[g.status] ?? g.status)} /></td>
-                      <td className="td whitespace-nowrap text-xs text-slate-500">{new Date(g.created_at).toLocaleDateString()}</td>
+                      <td className="td whitespace-nowrap text-xs text-slate-500">{fmtDate(g.created_at)}</td>
                       <td className="td whitespace-nowrap text-xs">
                         {GRIEVANCE_OPEN.includes(g.status)
                           ? (g.overdue ? <span className="font-semibold text-rose-600">{tr("Lapsed")}</span> : <span className="text-slate-600">{g.hours_remaining}h left</span>)
@@ -173,7 +174,7 @@ function Detail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: GrievanceA
 
       <div className="flex flex-wrap gap-4 text-xs text-slate-600">
         <span>Reporter: {g.subscriber_name ?? 'Anonymous'} · {g.reporter}</span>
-        <span>Filed: {new Date(g.created_at).toLocaleString()}</span>
+        <span>Filed: {fmtDateTime(g.created_at)}</span>
         <span>Category: {g.category}</span>
         <span>Matched by: {g.match_method.replace(/_/g, ' ').toLowerCase()}</span>
         {g.highlighted_url && <span className="break-all text-rose-700">URL: {g.highlighted_url}</span>}
@@ -187,7 +188,7 @@ function Detail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: GrievanceA
       {g.escalated_at && (
         <div className="rounded border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
           <strong>Escalated {g.escalated_by_role ? `by the ${g.escalated_by_role.replace(/_/g, ' ').toLowerCase()}` : 'by the enterprise'}</strong>
-          {' '}on {new Date(g.escalated_at).toLocaleString()}.
+          {' '}on {fmtDateTime(g.escalated_at)}.
           {g.escalation_reason && <span className="mt-1 block">Reason given: {g.escalation_reason}</span>}
         </div>
       )}
@@ -195,7 +196,7 @@ function Detail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: GrievanceA
       {(g.reopen_count ?? 0) > 0 && (
         <div className="rounded border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
           Re-opened by the reporter {(g.reopen_count ?? 0) === 1 ? 'once' : `${g.reopen_count} times`}
-          {g.reopened_at ? <> — latest on {new Date(g.reopened_at).toLocaleString()}</> : null}.
+          {g.reopened_at ? <> — latest on {fmtDateTime(g.reopened_at)}</> : null}.
           {g.reopen_reason && <span className="mt-1 block">Reason given: {g.reopen_reason}</span>}
         </div>
       )}

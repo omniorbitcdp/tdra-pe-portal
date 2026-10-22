@@ -84,7 +84,7 @@ export function LoginForm() {
       </div>
 
       <button className="btn-primary w-full" disabled={busy}>
-        {busy ? 'Signing in…' : `Sign in as ${active.label}`}
+        {busy ? tr('Signing in…') : tr('Sign in as {portal}', { portal: tr(active.label) })}
       </button>
     </form>
   );

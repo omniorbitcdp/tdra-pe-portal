@@ -1,5 +1,7 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
+import { STATUS_LABELS } from '@/lib/labels';
+import { fmtDateTime } from '@/lib/datetime';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid, Stepper, SectionTitle } from '@/components/ui';
@@ -51,16 +53,16 @@ export default function PeDashboard() {
 
   const steps = [
     { label: tr('KYC approved'), status: e.kyc_status, ok: e.kyc_status === 'APPROVED', href: '/pe/kyc', note: `PE ID ${e.entity_code ?? '—'}` },
-    { label: tr('Header approved'), status: headerStatus, ok: headerStatus === 'APPROVED', href: '/pe/headers', note: `${data.headers.length} request(s)` },
-    { label: tr('Template approved'), status: templateStatus, ok: templateStatus === 'APPROVED', href: '/pe/templates', note: `${data.templates.length} request(s)` },
-    { label: 'URL approved', status: urlStatus, ok: urlStatus === 'APPROVED', href: '/pe/urls', note: `${data.urls.length} request(s)` },
+    { label: tr('Header approved'), status: headerStatus, ok: headerStatus === 'APPROVED', href: '/pe/headers', note: tr('{n} request(s)', { n: data.headers.length }) },
+    { label: tr('Template approved'), status: templateStatus, ok: templateStatus === 'APPROVED', href: '/pe/templates', note: tr('{n} request(s)', { n: data.templates.length }) },
+    { label: tr('URL approved'), status: urlStatus, ok: urlStatus === 'APPROVED', href: '/pe/urls', note: tr('{n} request(s)', { n: data.urls.length }) },
   ];
 
   const nextAction = !e.kyc_info_approved || e.kyc_status !== 'APPROVED'
-    ? { label: uploaded < 4 ? tr('Upload your KYC documents') : (['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED'].includes(e.kyc_status) ? 'KYC is with the operator for review' : 'Submit your KYC pack for review'), href: '/pe/kyc' }
-    : headerStatus !== 'APPROVED' ? { label: 'Register a header', href: '/pe/headers' }
-    : templateStatus !== 'APPROVED' ? { label: 'Register a template', href: '/pe/templates' }
-    : urlStatus !== 'APPROVED' ? { label: 'Register a URL', href: '/pe/urls' }
+    ? { label: uploaded < 4 ? tr('Upload your KYC documents') : (['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED'].includes(e.kyc_status) ? tr('KYC is with the operator for review') : 'Submit your KYC pack for review'), href: '/pe/kyc' }
+    : headerStatus !== 'APPROVED' ? { label: tr('Register a header'), href: '/pe/headers' }
+    : templateStatus !== 'APPROVED' ? { label: tr('Register a template'), href: '/pe/templates' }
+    : urlStatus !== 'APPROVED' ? { label: tr('Register a URL'), href: '/pe/urls' }
     : { label: tr('All set — every stage is approved'), href: '/pe' };
 
   return (
@@ -90,7 +92,7 @@ export default function PeDashboard() {
 
       <SectionTitle>{tr("At a glance")}</SectionTitle>
       <StatGrid cols={4}>
-        <StatCard label={tr("Documents verified")} value={`${verified}/4`} tone={verified === 4 ? 'emerald' : 'amber'} hint={`${uploaded} uploaded`} />
+        <StatCard label={tr("Documents verified")} value={`${verified}/4`} tone={verified === 4 ? 'emerald' : 'amber'} hint={tr('{uploaded} uploaded', { uploaded: uploaded })} />
         <StatCard label={tr("Headers")} value={data.headers.length} hint={headerStatus.replace(/_/g, ' ')} href="/pe/headers" />
         <StatCard label={tr("Templates")} value={data.templates.length} hint={templateStatus.replace(/_/g, ' ')} href="/pe/templates" />
         <StatCard label={tr("URLs")} value={data.urls.length} hint={urlStatus.replace(/_/g, ' ')} href="/pe/urls" />
@@ -118,17 +120,17 @@ export default function PeDashboard() {
           <table className="table">
             <thead className="thead-row"><tr>
               <th className="th">{tr("When")}</th><th className="th">{tr("Module")}</th><th className="th">{tr("Action")}</th>
-              <th className="th">{tr("Status")}</th><th className="th">By</th><th className="th">{tr("Remarks")}</th>
+              <th className="th">{tr("Status")}</th><th className="th">{tr("By")}</th><th className="th">{tr("Remarks")}</th>
             </tr></thead>
             <tbody>
               {data.history.map((h) => (
                 <tr key={h.id} className="tr">
-                  <td className="td whitespace-nowrap text-xs text-slate-500">{new Date(h.created_at).toLocaleString()}</td>
-                  <td className="td text-xs">{h.module}</td>
-                  <td className="td text-xs font-medium">{h.action.replace(/_/g, ' ')}</td>
+                  <td className="td whitespace-nowrap text-xs text-slate-500"><span className="ltr-inline">{fmtDateTime(h.created_at)}</span></td>
+                  <td className="td text-xs">{tr(h.module)}</td>
+                  <td className="td text-xs font-medium">{tr(h.action.replace(/_/g, ' '))}</td>
                   <td className="td">{h.to_status ? <StatusPill status={h.to_status} /> : '—'}</td>
                   <td className="td text-xs">{h.actor_name ?? h.actor_email ?? tr('System')}</td>
-                  <td className="td max-w-[280px] text-xs text-slate-500">{h.remarks ?? '—'}</td>
+                  <td className="td max-w-[280px] text-xs text-slate-500" dir="auto">{h.remarks ?? '—'}</td>
                 </tr>
               ))}
             </tbody>

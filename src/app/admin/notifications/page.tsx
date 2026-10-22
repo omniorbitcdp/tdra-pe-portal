@@ -1,5 +1,6 @@
 'use client';
 import { t as tr } from '@/lib/i18n/live';
+import { fmtDate, fmtDateTime } from '@/lib/datetime';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
@@ -26,7 +27,7 @@ export default function NotificationsPage() {
             <thead><tr><th className="th">{tr("When")}</th><th className="th">{tr("Event")}</th><th className="th">{tr("Channel")}</th><th className="th">{tr("Recipient")}</th><th className="th">{tr("Status")}</th><th className="th">{tr("HTTP")}</th><th className="th">{tr("Message ID")}</th><th className="th">{tr("Error")}</th></tr></thead>
             <tbody>{rows.map((r) => (
               <tr key={r.id}>
-                <td className="td whitespace-nowrap text-xs">{new Date(r.created_at).toLocaleString()}</td>
+                <td className="td whitespace-nowrap text-xs">{fmtDateTime(r.created_at)}</td>
                 <td className="td">{tr(r.event)}</td><td className="td">{tr(r.channel)}</td><td className="td">{r.recipient}</td>
                 <td className="td"><StatusPill status={tr(r.status)} /></td><td className="td">{r.http_status ?? '—'}</td>
                 <td className="td text-xs">{r.provider_message_id ?? '—'}</td><td className="td text-xs text-rose-600">{r.error ?? ''}</td>
