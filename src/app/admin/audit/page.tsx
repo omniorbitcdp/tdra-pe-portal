@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, Empty, Avatar, Toolbar, StatCard, StatGrid } from '@/components/ui';
@@ -50,46 +51,46 @@ export default function AuditPage() {
   if (!loaded) return <Loader />;
   return (
     <div>
-      <PageHeader title="Audit Trail" subtitle="Who did what, when — reviewer, action, remarks and the status transition. Immutable, append-only." />
+      <PageHeader title={tr("Audit Trail")} subtitle={tr("Who did what, when — reviewer, action, remarks and the status transition. Immutable, append-only.")} />
       <ErrorBox message={error} />
 
       <StatGrid cols={4}>
-        <StatCard label="Approvals in view" value={approved} tone="emerald" />
-        <StatCard label="Rejections in view" value={rejected} tone="rose" />
-        <StatCard label="Corrections requested" value={corrections} tone="amber" />
-        <StatCard label="Distinct reviewers" value={people} />
+        <StatCard label={tr("Approvals in view")} value={approved} tone="emerald" />
+        <StatCard label={tr("Rejections in view")} value={rejected} tone="rose" />
+        <StatCard label={tr("Corrections requested")} value={corrections} tone="amber" />
+        <StatCard label={tr("Distinct reviewers")} value={people} />
       </StatGrid>
 
       <Card className="mt-5 overflow-hidden p-0">
         <Toolbar>
           <div className="flex flex-wrap items-end gap-3 px-5 pt-4">
-            <div><div className="label">Module</div>
+            <div><div className="label">{tr("Module")}</div>
               <select className="input max-w-[170px]" value={module} onChange={(e) => setModule(e.target.value)}>
                 {MODULES.map((m) => <option key={m} value={m}>{m || 'All modules'}</option>)}
               </select></div>
-            <div><div className="label">Action</div>
+            <div><div className="label">{tr("Action")}</div>
               <select className="input max-w-[200px]" value={action} onChange={(e) => setAction(e.target.value)}>
-                <option value="">All actions</option>
+                <option value="">{tr("All actions")}</option>
                 {actions.map((a) => <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>)}
               </select></div>
-            <div><div className="label">Reviewer (name or email)</div>
+            <div><div className="label">{tr("Reviewer (name or email)")}</div>
               <input className="input max-w-[220px]" placeholder="e.g. Aisha" value={actor} onChange={(e) => setActor(e.target.value)} /></div>
-            <div><div className="label">From</div><input type="date" className="input max-w-[160px]" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+            <div><div className="label">{tr("From")}</div><input type="date" className="input max-w-[160px]" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
             <div><div className="label">To</div><input type="date" className="input max-w-[160px]" value={to} onChange={(e) => setTo(e.target.value)} /></div>
             <label className="flex items-center gap-2 pb-2 text-sm font-semibold text-slate-600">
               <input type="checkbox" checked={decisionsOnly} onChange={(e) => setDecisionsOnly(e.target.checked)} />
               Decisions only
             </label>
-            <button className="btn-ghost mb-0.5" onClick={() => { setModule(''); setAction(''); setActor(''); setFrom(''); setTo(''); setDecisionsOnly(true); }}>Reset</button>
+            <button className="btn-ghost mb-0.5" onClick={() => { setModule(''); setAction(''); setActor(''); setFrom(''); setTo(''); setDecisionsOnly(true); }}>{tr("Reset")}</button>
           </div>
         </Toolbar>
 
         <div className="overflow-x-auto">
-          {rows.length === 0 ? <div className="px-5 pb-5"><Empty>No audit entries match these filters.</Empty></div> : (
+          {rows.length === 0 ? <div className="px-5 pb-5"><Empty>{tr("No audit entries match these filters.")}</Empty></div> : (
             <table className="table">
               <thead className="thead-row"><tr>
-                <th className="th">When</th><th className="th">Reviewer</th><th className="th">Module</th>
-                <th className="th">Action</th><th className="th">Transition</th><th className="th">Remarks</th>
+                <th className="th">{tr("When")}</th><th className="th">{tr("Reviewer")}</th><th className="th">{tr("Module")}</th>
+                <th className="th">{tr("Action")}</th><th className="th">{tr("Transition")}</th><th className="th">{tr("Remarks")}</th>
               </tr></thead>
               <tbody>
                 {rows.map((r) => (

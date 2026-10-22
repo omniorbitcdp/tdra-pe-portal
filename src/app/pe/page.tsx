@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid, Stepper, SectionTitle } from '@/components/ui';
@@ -25,11 +26,11 @@ export default function PeDashboard() {
   if (!data.entity) {
     return (
       <div>
-        <PageHeader title="Welcome" subtitle="Let's get your business registered." />
+        <PageHeader title={tr("Welcome")} subtitle="Let's get your business registered." />
         <Card>
-          <h2 className="text-lg font-semibold">Step 1 — complete your entity details</h2>
-          <p className="mt-2 text-sm text-slate-600">Then upload your four TDRA documents and submit the pack for review.</p>
-          <a className="btn-primary mt-4 inline-flex" href="/pe/profile">Start registration</a>
+          <h2 className="text-lg font-semibold">{tr("Step 1 — complete your entity details")}</h2>
+          <p className="mt-2 text-sm text-slate-600">{tr("Then upload your four TDRA documents and submit the pack for review.")}</p>
+          <a className="btn-primary mt-4 inline-flex" href="/pe/profile">{tr("Start registration")}</a>
         </Card>
       </div>
     );
@@ -66,36 +67,36 @@ export default function PeDashboard() {
     <div>
       <PageHeader title={e.legal_entity_name}
         subtitle={`${e.entity_type} · KYC ${e.kyc_status.replace(/_/g, ' ')}`}
-        actions={<a className="btn-ghost" href="/pe/profile">Edit details</a>} />
+        actions={<a className="btn-ghost" href="/pe/profile">{tr("Edit details")}</a>} />
 
       <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Your PE ID</span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{tr("Your PE ID")}</span>
         <span className="font-mono text-xl font-bold brand-text">{e.entity_code ?? '—'}</span>
-        <span className="text-xs text-slate-500">Quote this in every request to the operator</span>
+        <span className="text-xs text-slate-500">{tr("Quote this in every request to the operator")}</span>
       </div>
 
       <Card className="mb-6 border-l-4" >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Your next step</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{tr("Your next step")}</div>
             <div className="mt-1 text-base font-semibold text-slate-800">{nextAction.label}</div>
           </div>
-          <a className="btn-primary" href={nextAction.href}>Go to step</a>
+          <a className="btn-primary" href={nextAction.href}>{tr("Go to step")}</a>
         </div>
       </Card>
 
-      <SectionTitle>Registration progress</SectionTitle>
+      <SectionTitle>{tr("Registration progress")}</SectionTitle>
       <Card><Stepper steps={steps} /></Card>
 
-      <SectionTitle>At a glance</SectionTitle>
+      <SectionTitle>{tr("At a glance")}</SectionTitle>
       <StatGrid cols={4}>
-        <StatCard label="Documents verified" value={`${verified}/4`} tone={verified === 4 ? 'emerald' : 'amber'} hint={`${uploaded} uploaded`} />
-        <StatCard label="Headers" value={data.headers.length} hint={headerStatus.replace(/_/g, ' ')} href="/pe/headers" />
-        <StatCard label="Templates" value={data.templates.length} hint={templateStatus.replace(/_/g, ' ')} href="/pe/templates" />
-        <StatCard label="URLs" value={data.urls.length} hint={urlStatus.replace(/_/g, ' ')} href="/pe/urls" />
+        <StatCard label={tr("Documents verified")} value={`${verified}/4`} tone={verified === 4 ? 'emerald' : 'amber'} hint={`${uploaded} uploaded`} />
+        <StatCard label={tr("Headers")} value={data.headers.length} hint={headerStatus.replace(/_/g, ' ')} href="/pe/headers" />
+        <StatCard label={tr("Templates")} value={data.templates.length} hint={templateStatus.replace(/_/g, ' ')} href="/pe/templates" />
+        <StatCard label={tr("URLs")} value={data.urls.length} hint={urlStatus.replace(/_/g, ' ')} href="/pe/urls" />
       </StatGrid>
 
-      <SectionTitle right={<a className="btn-ghost btn-sm" href="/pe/kyc">Manage documents</a>}>KYC document pack</SectionTitle>
+      <SectionTitle right={<a className="btn-ghost btn-sm" href="/pe/kyc">{tr("Manage documents")}</a>}>{tr("KYC document pack")}</SectionTitle>
       <Card>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {MANDATORY_DOC_TYPES.map((t) => {
@@ -111,13 +112,13 @@ export default function PeDashboard() {
         </div>
       </Card>
 
-      <SectionTitle>History</SectionTitle>
+      <SectionTitle>{tr("History")}</SectionTitle>
       <Card className="overflow-hidden p-0">
-        {data.history.length === 0 ? <div className="p-5"><Empty>No activity yet.</Empty></div> : (
+        {data.history.length === 0 ? <div className="p-5"><Empty>{tr("No activity yet.")}</Empty></div> : (
           <table className="table">
             <thead className="thead-row"><tr>
-              <th className="th">When</th><th className="th">Module</th><th className="th">Action</th>
-              <th className="th">Status</th><th className="th">By</th><th className="th">Remarks</th>
+              <th className="th">{tr("When")}</th><th className="th">{tr("Module")}</th><th className="th">{tr("Action")}</th>
+              <th className="th">{tr("Status")}</th><th className="th">By</th><th className="th">{tr("Remarks")}</th>
             </tr></thead>
             <tbody>
               {data.history.map((h) => (

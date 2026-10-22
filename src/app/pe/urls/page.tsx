@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
@@ -31,8 +32,8 @@ export default function UrlsPage() {
     e.preventDefault(); if (busy) return; setBusy(true); setErrors({}); setError(''); setNotice('');
     const res = await api('/api/pe/urls', { method: 'POST', body: JSON.stringify(form) });
     setBusy(false);
-    if (!res.ok) { setErrors(res.data.errors ?? {}); setError(res.data.error ?? 'Could not create'); return; }
-    setForm({ ...EMPTY }); setNotice('URL draft created.'); await load();
+    if (!res.ok) { setErrors(res.data.errors ?? {}); setError(res.data.error ?? tr('Could not create')); return; }
+    setForm({ ...EMPTY }); setNotice(tr('URL draft created.')); await load();
   }
 
   async function submit(id: string) {
@@ -40,30 +41,30 @@ export default function UrlsPage() {
     setBusyId(id); setError(''); setNotice('');
     const res = await api('/api/pe/submit', { method: 'POST', body: JSON.stringify({ module: 'URL', id }) });
     setBusyId('');
-    if (!res.ok) setError(res.data.error ?? 'Submit failed'); else { setNotice('URL submitted for approval.'); await load(); }
+    if (!res.ok) setError(res.data.error ?? tr('Submit failed')); else { setNotice(tr('URL submitted for approval.')); await load(); }
   }
 
   if (!loaded) return <Loader />;
   return (
     <div>
-      <PageHeader title="URL Registration" subtitle="Section 6 — requires an approved template" />
+      <PageHeader title={tr("URL Registration")} subtitle={tr("Section 6 — requires an approved template")} />
       <ErrorBox message={error} /><Notice message={notice} />
       <Card className="mb-6">
         {templates.length === 0
-          ? <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">You need at least one <strong>approved template</strong> before registering a URL.</div>
+          ? <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">{tr("You need at least one")} <strong>{tr("approved template")}</strong> {tr("before registering a URL.")}</div>
           : (
             <form onSubmit={create} className="grid gap-4 md:grid-cols-4 md:items-end">
-              <div><label className="label">Approved template *</label><select className="input" value={form.template_id} onChange={(e) => setForm({ ...form, template_id: e.target.value })}><option value="">Select…</option>{templates.map((t) => <option key={t.id} value={t.id}>{t.template_name}</option>)}</select>{errors.template_id && <p className="mt-1 text-xs text-rose-600">{errors.template_id}</p>}</div>
-              <div className="md:col-span-2"><label className="label">URL</label><input className="input" placeholder="https://entity.ae/dlt/callback" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />{errors.url && <p className="mt-1 text-xs text-rose-600">{errors.url}</p>}</div>
-              <div><label className="label">Method</label><select className="input" value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}><option value="POST">POST</option><option value="GET">GET</option></select></div>
+              <div><label className="label">{tr("Approved template *")}</label><select className="input" value={form.template_id} onChange={(e) => setForm({ ...form, template_id: e.target.value })}><option value="">{tr("Select…")}</option>{templates.map((t) => <option key={t.id} value={t.id}>{t.template_name}</option>)}</select>{errors.template_id && <p className="mt-1 text-xs text-rose-600">{errors.template_id}</p>}</div>
+              <div className="md:col-span-2"><label className="label">{tr("URL")}</label><input className="input" placeholder="https://entity.ae/dlt/callback" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />{errors.url && <p className="mt-1 text-xs text-rose-600">{errors.url}</p>}</div>
+              <div><label className="label">{tr("Method")}</label><select className="input" value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}><option value="POST">POST</option><option value="GET">GET</option></select></div>
               <button className="btn-primary md:col-span-4" disabled={busy}>{busy ? 'Adding…' : 'Add URL'}</button>
             </form>
           )}
       </Card>
       <Card className="overflow-x-auto">
-        {items.length === 0 ? <Empty>No URLs yet.</Empty> : (
+        {items.length === 0 ? <Empty>{tr("No URLs yet.")}</Empty> : (
           <table className="w-full">
-            <thead><tr><th className="th">URL ID</th><th className="th">URL</th><th className="th">Template</th><th className="th">Method</th><th className="th">Type</th><th className="th">Status</th><th className="th">Remarks</th><th className="th"></th></tr></thead>
+            <thead><tr><th className="th">{tr("URL ID")}</th><th className="th">{tr("URL")}</th><th className="th">{tr("Template")}</th><th className="th">{tr("Method")}</th><th className="th">{tr("Type")}</th><th className="th">{tr("Status")}</th><th className="th">{tr("Remarks")}</th><th className="th"></th></tr></thead>
             <tbody>
               {items.map((u) => (
                 <>
@@ -84,7 +85,7 @@ export default function UrlsPage() {
                   </tr>
                   {editing === u.id && (
                     <tr key={`${u.id}-edit`}>
-                      <td className="td bg-slate-50" colSpan={8}><UrlEditor url={u} templates={templates} onSaved={async () => { setEditing(''); setNotice('URL updated.'); await load(); }} /></td>
+                      <td className="td bg-slate-50" colSpan={8}><UrlEditor url={u} templates={templates} onSaved={async () => { setEditing(''); setNotice(tr('URL updated.')); await load(); }} /></td>
                     </tr>
                   )}
                 </>
@@ -105,20 +106,20 @@ function UrlEditor({ url, templates, onSaved }: { url: Url; templates: Tpl[]; on
     if (busy) return; setBusy(true); setErr(''); setErrors({});
     const res = await api('/api/pe/urls', { method: 'PUT', body: JSON.stringify({ id: url.id, ...d }) });
     setBusy(false);
-    if (!res.ok) { setErrors(res.data.errors ?? {}); setErr(res.data.error ?? 'Could not save'); return; }
+    if (!res.ok) { setErrors(res.data.errors ?? {}); setErr(res.data.error ?? tr('Could not save')); return; }
     await onSaved();
   }
 
   return (
     <div className="space-y-3 py-1">
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Edit URL · <span className="font-mono">{url.url_code ?? ''}</span></div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{tr("Edit URL ·")} <span className="font-mono">{url.url_code ?? ''}</span></div>
       {url.status === 'CLARIFICATION_REQUIRED' && url.remarks && (
         <p className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-800">Reviewer remarks: {url.remarks}</p>
       )}
       <div className="grid gap-3 md:grid-cols-4">
-        <div className="md:col-span-2"><label className="label">URL</label><input className="input" value={d.url} onChange={(e) => setD({ ...d, url: e.target.value })} />{errors.url && <p className="mt-1 text-xs text-rose-600">{errors.url}</p>}</div>
-        <div><label className="label">Method</label><select className="input" value={d.method} onChange={(e) => setD({ ...d, method: e.target.value })}><option value="POST">POST</option><option value="GET">GET</option></select></div>
-        <div><label className="label">Template</label><select className="input" value={d.template_id} onChange={(e) => setD({ ...d, template_id: e.target.value })}>{templates.map((t) => <option key={t.id} value={t.id}>{t.template_name}</option>)}</select>{errors.template_id && <p className="mt-1 text-xs text-rose-600">{errors.template_id}</p>}</div>
+        <div className="md:col-span-2"><label className="label">{tr("URL")}</label><input className="input" value={d.url} onChange={(e) => setD({ ...d, url: e.target.value })} />{errors.url && <p className="mt-1 text-xs text-rose-600">{errors.url}</p>}</div>
+        <div><label className="label">{tr("Method")}</label><select className="input" value={d.method} onChange={(e) => setD({ ...d, method: e.target.value })}><option value="POST">POST</option><option value="GET">GET</option></select></div>
+        <div><label className="label">{tr("Template")}</label><select className="input" value={d.template_id} onChange={(e) => setD({ ...d, template_id: e.target.value })}>{templates.map((t) => <option key={t.id} value={t.id}>{t.template_name}</option>)}</select>{errors.template_id && <p className="mt-1 text-xs text-rose-600">{errors.template_id}</p>}</div>
       </div>
       {err && <p className="text-xs text-rose-600">{err}</p>}
       <button className="btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save changes'}</button>

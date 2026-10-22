@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card } from '@/components/ui';
@@ -17,7 +18,7 @@ export default function AdminOverview() {
   ] as const;
   return (
     <div>
-      <PageHeader title="Platform Overview" subtitle="Administrative summary (least-privilege, audited)" />
+      <PageHeader title={tr("Platform Overview")} subtitle={tr("Administrative summary (least-privilege, audited)")} />
       <div className="grid gap-4 md:grid-cols-4">
         {tiles.map(([label, value]) => (
           <Card key={label}>

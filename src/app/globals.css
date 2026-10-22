@@ -34,3 +34,38 @@ body { @apply bg-slate-50 text-slate-800 antialiased; }
 
 /* table rows slightly tighter on dense queues */
 table tbody tr:last-child td { border-bottom: 0; }
+
+/* ── Bilingual / RTL layer ────────────────────────────────────────────────
+   Tailwind's physical utilities do not flip on their own. These overrides
+   make the same markup read correctly in Arabic without duplicating every
+   component for the RTL direction. */
+html[dir='rtl'] body,
+html[dir='rtl'] .font-ar {
+  font-family: 'Cairo', 'Noto Kufi Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
+}
+html[dir='rtl'] .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+html[dir='rtl'] .ml-auto { margin-left: 0; margin-right: auto; }
+html[dir='rtl'] .mr-auto { margin-right: 0; margin-left: auto; }
+html[dir='rtl'] .text-left { text-align: right; }
+html[dir='rtl'] .text-right { text-align: left; }
+html[dir='rtl'] .text-start { text-align: right; }
+
+/* keep letter-spacing off Arabic — it breaks the joins */
+html[dir='rtl'] .tracking-wide,
+html[dir='rtl'] .tracking-wider,
+html[dir='rtl'] .tracking-widest { letter-spacing: 0; }
+
+/* nav underline / tab borders sit on the correct side automatically */
+html[dir='rtl'] .-mb-px { margin-bottom: -1px; }
+
+/* icons and chevrons that encode direction */
+html[dir='rtl'] .rtl-flip { transform: scaleX(-1); }
+
+/* latin codes, e-mails and reference numbers stay LTR inside Arabic text */
+.ltr-inline { unicode-bidi: isolate; direction: ltr; display: inline-block; }
+html[dir='rtl'] .th, html[dir='rtl'] .td { text-align: right; }
+html[dir='rtl'] input, html[dir='rtl'] textarea, html[dir='rtl'] select { text-align: right; }
+html[dir='rtl'] input[type='email'], html[dir='rtl'] input[type='url'],
+html[dir='rtl'] input[type='tel'], html[dir='rtl'] input[type='password'] { text-align: right; }
+html[dir='rtl'] .label { letter-spacing: 0; }

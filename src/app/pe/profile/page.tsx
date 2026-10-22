@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card } from '@/components/ui';
@@ -33,8 +34,8 @@ export default function ProfilePage() {
     e.preventDefault(); setBusy(true); setErrors({}); setError(''); setNotice('');
     const res = await api('/api/pe/profile', { method: 'PUT', body: JSON.stringify(form) });
     setBusy(false);
-    if (!res.ok) { setErrors(res.data.errors ?? {}); setError(res.data.error ?? 'Could not save'); return; }
-    setNotice('Entity details saved.');
+    if (!res.ok) { setErrors(res.data.errors ?? {}); setError(res.data.error ?? tr('Could not save')); return; }
+    setNotice(tr('Entity details saved.'));
   }
 
   if (!loaded) return <Loader />;
@@ -44,7 +45,7 @@ export default function ProfilePage() {
       <label className="label">{label}</label>
       {opts ? (
         <select className="input" value={form[key]} onChange={(e) => set(key, e.target.value)}>
-          <option value="">Select…</option>
+          <option value="">{tr("Select…")}</option>
           {opts.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
       ) : (
@@ -56,16 +57,16 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <PageHeader title="Entity & Signatory Details" subtitle="Section 4.1 and 4.2 — baseline registration fields" />
+      <PageHeader title={tr("Entity & Signatory Details")} subtitle={tr("Section 4.1 and 4.2 — baseline registration fields")} />
       <ErrorBox message={error} />
       <Notice message={notice} />
       <form onSubmit={submit} className="space-y-6">
         <Card>
           <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 px-4 py-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">PE ID</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{tr("PE ID")}</span>
             <span className="font-mono text-sm font-bold brand-text">{form.entity_code || "assigned on first save"}</span>
           </div>
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Entity and business details</h2>
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">{tr("Entity and business details")}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {F('Legal entity name *', 'legal_entity_name')}
             {F('Entity type *', 'entity_type', 'text', ENTITY_TYPES as unknown as string[])}
@@ -81,19 +82,19 @@ export default function ProfilePage() {
             {F('Website', 'website', 'url')}
           </div>
           <div className="mt-4">
-            <label className="label">Business description *</label>
+            <label className="label">{tr("Business description *")}</label>
             <textarea className="input min-h-[90px]" value={form.business_description} onChange={(e) => set('business_description', e.target.value)} />
             {errors.business_description && <p className="mt-1 text-xs text-rose-600">{errors.business_description}</p>}
           </div>
           <div className="mt-4">
-            <label className="label">Registered address *</label>
+            <label className="label">{tr("Registered address *")}</label>
             <textarea className="input min-h-[70px]" value={form.registered_address} onChange={(e) => set('registered_address', e.target.value)} />
             {errors.registered_address && <p className="mt-1 text-xs text-rose-600">{errors.registered_address}</p>}
           </div>
         </Card>
 
         <Card>
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Authorised signatory / contact details</h2>
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">{tr("Authorised signatory / contact details")}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {F('Signatory full name *', 'signatory_name')}
             {F('Designation *', 'signatory_designation')}

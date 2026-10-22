@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useState } from 'react';
 
 export function ForgotForm() {
@@ -15,7 +16,7 @@ export function ForgotForm() {
   return (
     <form onSubmit={submit} className="mt-6 space-y-4">
       {message && <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</div>}
-      <div><label className="label">Email</label><input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+      <div><label className="label">{tr("Email")}</label><input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
       <button className="btn-primary w-full" disabled={busy}>{busy ? 'Sending…' : 'Send reset link'}</button>
     </form>
   );

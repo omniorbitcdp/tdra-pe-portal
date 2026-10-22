@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card } from '@/components/ui';
@@ -29,7 +30,7 @@ export default function AdminSettings() {
       logo_data_url: settings.logoDataUrl, brand_color: settings.brandColor, max_kyc_file_mb: settings.maxKycFileMb,
     }) });
     setBusy(false);
-    if (!res.ok) { setError(res.data.error ?? 'Could not save'); return; }
+    if (!res.ok) { setError(res.data.error ?? tr('Could not save')); return; }
     setNotice('Settings saved. Reload the page to see the new branding.');
   }
 
@@ -38,36 +39,36 @@ export default function AdminSettings() {
 
   return (
     <div>
-      <PageHeader title="Branding & Platform Settings" subtitle="Change the telecom operator name and logo at any time" />
+      <PageHeader title={tr("Branding & Platform Settings")} subtitle={tr("Change the telecom operator name and logo at any time")} />
       <ErrorBox message={error} /><Notice message={notice} />
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Operator identity</h2>
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">{tr("Operator identity")}</h2>
           <div className="space-y-4">
-            <div><label className="label">Telecom operator name</label><input className="input" value={settings.operatorName} onChange={(e) => set('operatorName', e.target.value)} /></div>
-            <div><label className="label">Short name (logo fallback / initials)</label><input className="input" value={settings.operatorShortName} onChange={(e) => set('operatorShortName', e.target.value)} /></div>
-            <div><label className="label">Brand colour</label>
+            <div><label className="label">{tr("Telecom operator name")}</label><input className="input" value={settings.operatorName} onChange={(e) => set('operatorName', e.target.value)} /></div>
+            <div><label className="label">{tr("Short name (logo fallback / initials)")}</label><input className="input" value={settings.operatorShortName} onChange={(e) => set('operatorShortName', e.target.value)} /></div>
+            <div><label className="label">{tr("Brand colour")}</label>
               <div className="flex items-center gap-3">
                 <input type="color" value={settings.brandColor} onChange={(e) => set('brandColor', e.target.value)} className="h-10 w-16 rounded border border-slate-300" />
                 <input className="input max-w-[140px]" value={settings.brandColor} onChange={(e) => set('brandColor', e.target.value)} />
               </div>
             </div>
-            <div><label className="label">Maximum KYC file size (MB)</label><input type="number" className="input max-w-[140px]" value={settings.maxKycFileMb} onChange={(e) => set('maxKycFileMb', Number(e.target.value))} /></div>
+            <div><label className="label">{tr("Maximum KYC file size (MB)")}</label><input type="number" className="input max-w-[140px]" value={settings.maxKycFileMb} onChange={(e) => set('maxKycFileMb', Number(e.target.value))} /></div>
           </div>
         </Card>
 
         <Card>
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Logo</h2>
-          <p className="mb-3 text-xs text-slate-500">Upload an image (stored as a base64 data URL) or paste an image URL.</p>
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">{tr("Logo")}</h2>
+          <p className="mb-3 text-xs text-slate-500">{tr("Upload an image (stored as a base64 data URL) or paste an image URL.")}</p>
           <div className="mb-4 flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50">
             {settings.logoDataUrl
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={settings.logoDataUrl} alt="logo preview" className="max-h-20 max-w-full" />
-              : <span className="text-xs text-slate-400">No logo configured — initials will be shown</span>}
+              ? <img src={settings.logoDataUrl} alt={tr("logo preview")} className="max-h-20 max-w-full" />
+              : <span className="text-xs text-slate-400">{tr("No logo configured — initials will be shown")}</span>}
           </div>
-          <label className="btn-ghost cursor-pointer">Upload image<input type="file" accept="image/*" className="hidden" onChange={onLogo} /></label>
-          <div className="mt-3"><label className="label">Logo URL / data URL</label><input className="input" value={settings.logoDataUrl ?? ''} onChange={(e) => set('logoDataUrl', e.target.value || null)} placeholder="https://… or data:image/png;base64,…" /></div>
-          {settings.logoDataUrl && <button className="mt-3 text-xs text-rose-600" onClick={() => set('logoDataUrl', null)}>Remove logo</button>}
+          <label className="btn-ghost cursor-pointer">{tr("Upload image")}<input type="file" accept="image/*" className="hidden" onChange={onLogo} /></label>
+          <div className="mt-3"><label className="label">{tr("Logo URL / data URL")}</label><input className="input" value={settings.logoDataUrl ?? ''} onChange={(e) => set('logoDataUrl', e.target.value || null)} placeholder="https://… or data:image/png;base64,…" /></div>
+          {settings.logoDataUrl && <button className="mt-3 text-xs text-rose-600" onClick={() => set('logoDataUrl', null)}>{tr("Remove logo")}</button>}
         </Card>
       </div>
       <button className="btn-primary mt-5" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save settings'}</button>

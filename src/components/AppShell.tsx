@@ -4,10 +4,13 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { getSession, homeForRole } from '@/lib/auth';
 import { getSettings } from '@/lib/settings';
+import { getLang } from '@/lib/i18n/server';
+import { translate } from '@/lib/i18n';
 import { navForRole, type NavGroup } from '@/lib/nav';
 import { MODULES_FOR_ROLE, ROLE_LABELS, type ModuleKey } from '@/lib/constants';
 import { TopNav } from './TopNav';
 import { DeniedBanner } from './DeniedBanner';
+import { LangToggle } from './LangToggle';
 import { Icon } from './icons';
 
 const STATUS_COLUMN: Record<ModuleKey, { table: string; column: string }> = {
@@ -43,7 +46,8 @@ export async function AppShell({ modules = [], children }: AppShellProps) {
   if (groups.length === 0) redirect(homeForRole('PE'));
 
   const mods = modules.length > 0 ? modules : MODULES_FOR_ROLE[session.role];
-  const [settings, pending] = await Promise.all([getSettings(), pendingCounts(mods)]);
+  const [settings, pending, lang] = await Promise.all([getSettings(), pendingCounts(mods), getLang()]);
+  const t = (k: string, v?: Record<string, string | number>) => translate(lang, k, v);
 
   const name = session.name ?? session.email;
   const pendingTotal = Object.values(pending).reduce((a, b) => a + b, 0);
@@ -51,7 +55,7 @@ export async function AppShell({ modules = [], children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-x-5 gap-y-3 px-5 py-3">
+        <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3">
           {/* Brand: logo and company name sit side by side, never overlapping */}
           <Link href={homeForRole(session.role)} className="flex min-w-0 items-center gap-3">
             {settings.logoDataUrl ? (
@@ -70,16 +74,20 @@ export async function AppShell({ modules = [], children }: AppShellProps) {
 
           <div className="ml-auto flex items-center gap-3">
             {pendingTotal > 0 && (
-              <span className="hidden items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200 sm:inline-flex">
+              <span className="hidden items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200 md:inline-flex">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                {pendingTotal} awaiting your action
+                {t('{n} awaiting your action', { n: pendingTotal })}
               </span>
             )}
+
+            {/* Language switch — immediately before the signed-in user */}
+            <LangToggle />
+
             <span className="hidden text-right sm:block">
               <span className="block text-sm font-semibold leading-tight text-slate-800">{name}</span>
-              <span className="block text-[11px] text-slate-500">{ROLE_LABELS[session.role]}</span>
+              <span className="block text-[11px] text-slate-500">{t(ROLE_LABELS[session.role])}</span>
             </span>
-            <SignOutButton />
+            <SignOutButton label={t('Sign out')} />
           </div>
         </div>
 
@@ -98,13 +106,11 @@ export async function AppShell({ modules = [], children }: AppShellProps) {
   );
 }
 
-function SignOutButton() {
+function SignOutButton({ label }: { label: string }) {
   return (
-    <form action="/api/auth/logout" method="post">
-      <a href="/logout" className="btn-ghost btn-sm flex items-center gap-1.5">
-        <Icon name="logout" className="h-3.5 w-3.5" />
-        Sign out
-      </a>
-    </form>
+    <a href="/logout" className="btn-ghost btn-sm flex items-center gap-1.5">
+      <Icon name="logout" className="h-3.5 w-3.5 rtl-flip" />
+      {label}
+    </a>
   );
 }

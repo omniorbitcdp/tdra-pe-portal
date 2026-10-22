@@ -1,9 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { translate } from '@/lib/i18n';
+import { useLang } from './LangProvider';
 
 export function Tabs({ items }: { items: Array<{ href: string; label: string }> }) {
   const path = usePathname();
+  const { t } = useLang();
   return (
     <nav className="mb-6 flex flex-wrap gap-1 border-b border-slate-200">
       {items.map((it) => {
@@ -11,7 +14,7 @@ export function Tabs({ items }: { items: Array<{ href: string; label: string }> 
         return (
           <Link key={it.href} href={it.href}
             className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold ${active ? 'brand-border brand-text' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            {it.label}
+            {t(it.label)}
           </Link>
         );
       })}
@@ -19,8 +22,9 @@ export function Tabs({ items }: { items: Array<{ href: string; label: string }> 
   );
 }
 
-export function Loader({ label = 'Loading…' }: { label?: string }) {
-  return <div className="py-16 text-center text-sm text-slate-400">{label}</div>;
+export function Loader({ label }: { label?: string }) {
+  const { t } = useLang();
+  return <div className="py-16 text-center text-sm text-slate-400">{label ?? t('Loading…')}</div>;
 }
 
 export function ErrorBox({ message }: { message?: string }) {
@@ -32,3 +36,5 @@ export function Notice({ message }: { message?: string }) {
   if (!message) return null;
   return <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</div>;
 }
+
+export { translate };

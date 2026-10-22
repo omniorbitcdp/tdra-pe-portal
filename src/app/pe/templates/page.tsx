@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
@@ -53,39 +54,39 @@ export default function TemplatesPage() {
     e.preventDefault(); setBusy(true); setErrors({}); setError(''); setNotice('');
     const res = await api('/api/pe/templates', { method: 'POST', body: JSON.stringify(form) });
     setBusy(false);
-    if (!res.ok) { setErrors(res.data.errors ?? {}); setError(res.data.error ?? 'Could not create'); return; }
-    setForm({ ...EMPTY, variable_samples: {} }); setNotice('Template draft created.'); await load();
+    if (!res.ok) { setErrors(res.data.errors ?? {}); setError(res.data.error ?? tr('Could not create')); return; }
+    setForm({ ...EMPTY, variable_samples: {} }); setNotice(tr('Template draft created.')); await load();
   }
   async function submit(id: string) {
     if (busyId) return;            // one submission in flight at a time
     setBusyId(id); setError(''); setNotice('');
     const res = await api('/api/pe/submit', { method: 'POST', body: JSON.stringify({ module: 'TEMPLATE', id }) });
     setBusyId('');
-    if (!res.ok) setError(res.data.error ?? 'Submit failed'); else { setNotice('Template submitted for approval.'); await load(); }
+    if (!res.ok) setError(res.data.error ?? tr('Submit failed')); else { setNotice(tr('Template submitted for approval.')); await load(); }
   }
 
   if (!loaded) return <Loader />;
   return (
     <div>
-      <PageHeader title="Template Registration" subtitle="Section 6 — SMS templates only, requires an approved header" />
+      <PageHeader title={tr("Template Registration")} subtitle={tr("Section 6 — SMS templates only, requires an approved header")} />
       <ErrorBox message={error} /><Notice message={notice} />
       <Card className="mb-6">
         {headers.length === 0
-          ? <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">You need at least one <strong>approved header</strong> before registering a template.</div>
+          ? <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">{tr("You need at least one")} <strong>{tr("approved header")}</strong> {tr("before registering a template.")}</div>
           : (
             <form onSubmit={create} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-3">
-                <div><label className="label">Approved header *</label><select className="input" value={form.header_id} onChange={(e) => setForm({ ...form, header_id: e.target.value })}><option value="">Select…</option>{headers.map((h) => <option key={h.id} value={h.id}>{h.header_name} ({h.sender_id})</option>)}</select>{errors.header_id && <p className="mt-1 text-xs text-rose-600">{errors.header_id}</p>}</div>
-                <div><label className="label">Template name</label><input className="input" value={form.template_name} onChange={(e) => setForm({ ...form, template_name: e.target.value })} />{errors.template_name && <p className="mt-1 text-xs text-rose-600">{errors.template_name}</p>}</div>
-                <div><label className="label">Category</label><select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="TRANSACTIONAL">Transactional</option><option value="OTP">OTP</option><option value="PROMOTIONAL">Promotional</option><option value="SERVICE">Service</option></select></div>
+                <div><label className="label">{tr("Approved header *")}</label><select className="input" value={form.header_id} onChange={(e) => setForm({ ...form, header_id: e.target.value })}><option value="">{tr("Select…")}</option>{headers.map((h) => <option key={h.id} value={h.id}>{h.header_name} ({h.sender_id})</option>)}</select>{errors.header_id && <p className="mt-1 text-xs text-rose-600">{errors.header_id}</p>}</div>
+                <div><label className="label">{tr("Template name")}</label><input className="input" value={form.template_name} onChange={(e) => setForm({ ...form, template_name: e.target.value })} />{errors.template_name && <p className="mt-1 text-xs text-rose-600">{errors.template_name}</p>}</div>
+                <div><label className="label">{tr("Category")}</label><select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="TRANSACTIONAL">{tr("Transactional")}</option><option value="OTP">{tr("OTP")}</option><option value="PROMOTIONAL">{tr("Promotional")}</option><option value="SERVICE">{tr("Service")}</option></select></div>
               </div>
 
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="label mb-0">Template body</label>
-                  <button type="button" className="btn-ghost btn-sm" onClick={addVariable}>+ Add variable</button>
+                  <label className="label mb-0">{tr("Template body")}</label>
+                  <button type="button" className="btn-ghost btn-sm" onClick={addVariable}>{tr("+ Add variable")}</button>
                 </div>
-                <textarea ref={bodyRef} className="input min-h-[90px]" placeholder="Dear <var1>, your order <var2> is ready for delivery." value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+                <textarea ref={bodyRef} className="input min-h-[90px]" placeholder={tr("Dear <var1>, your order <var2> is ready for delivery.")} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
                 <p className="mt-1 text-xs text-slate-500">
                   Declare a placeholder with the <span className="font-mono">&lt;var1&gt;</span>, <span className="font-mono">&lt;var2&gt;</span> format — the numbering is assigned for you.
                 </p>
@@ -95,8 +96,8 @@ export default function TemplatesPage() {
               {declared.length > 0 && (
                 <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-slate-700">Sample content</span>
-                    <span className="text-xs text-slate-500">Give each variable a value so the reviewer reads the message as a subscriber would.</span>
+                    <span className="text-sm font-semibold text-slate-700">{tr("Sample content")}</span>
+                    <span className="text-xs text-slate-500">{tr("Give each variable a value so the reviewer reads the message as a subscriber would.")}</span>
                   </div>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     {declared.map((v) => (
@@ -112,26 +113,26 @@ export default function TemplatesPage() {
 
               {form.body.trim() && (
                 <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-blue-700">SMS preview</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-blue-700">{tr("SMS preview")}</span>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{preview}</p>
                   <p className="mt-2 text-[11px] text-slate-500">{form.body.length} characters · {Math.max(1, Math.ceil(form.body.length / 160))} SMS part(s)</p>
                 </div>
               )}
 
-              <button className="btn-primary" disabled={busy}>Add template</button>
+              <button className="btn-primary" disabled={busy}>{tr("Add template")}</button>
             </form>
           )}
       </Card>
       <Card className="overflow-x-auto">
-        {items.length === 0 ? <Empty>No templates yet.</Empty> : (
+        {items.length === 0 ? <Empty>{tr("No templates yet.")}</Empty> : (
           <table className="w-full">
-            <thead><tr><th className="th">Template ID</th><th className="th">Name</th><th className="th">Header</th><th className="th">Category</th><th className="th">Variables</th><th className="th">Status</th><th className="th">Remarks</th><th className="th"></th></tr></thead>
+            <thead><tr><th className="th">{tr("Template ID")}</th><th className="th">{tr("Name")}</th><th className="th">{tr("Header")}</th><th className="th">{tr("Category")}</th><th className="th">{tr("Variables")}</th><th className="th">{tr("Status")}</th><th className="th">{tr("Remarks")}</th><th className="th"></th></tr></thead>
             <tbody>
               {items.map((t) => (
                 <>
                   <tr key={t.id}>
                     <td className="td font-mono text-xs">{t.template_code ?? '—'}</td>
-                    <td className="td font-medium">{t.template_name}<span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">SMS</span></td>
+                    <td className="td font-medium">{t.template_name}<span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{tr("SMS")}</span></td>
                     <td className="td text-xs">{allHeaders.find((x) => x.id === t.header_id)?.header_code ?? '—'}</td>
                     <td className="td">{t.category}</td>
                     <td className="td text-xs">{(t.variables ?? '').split(',').filter(Boolean).map((v) => <span key={v} className="mr-1 font-mono text-blue-700">&lt;{v}&gt;</span>)}{!(t.variables ?? '').trim() && <span className="text-slate-400">—</span>}</td>
@@ -151,7 +152,7 @@ export default function TemplatesPage() {
                   </tr>
                   {editing === t.id && (
                     <tr key={`${t.id}-samples`}>
-                      <td className="td bg-slate-50" colSpan={8}><TemplateEditor tpl={t} onSaved={async () => { setEditing(''); setNotice('Template updated.'); await load(); }} /></td>
+                      <td className="td bg-slate-50" colSpan={8}><TemplateEditor tpl={t} onSaved={async () => { setEditing(''); setNotice(tr('Template updated.')); await load(); }} /></td>
                     </tr>
                   )}
                 </>
@@ -195,32 +196,32 @@ function TemplateEditor({ tpl, onSaved }: { tpl: Tpl; onSaved: () => void | Prom
       body: JSON.stringify({ id: tpl.id, template_name: name, category, body, variable_samples: samples }),
     });
     setBusy(false);
-    if (!res.ok) { setErrors(res.data.errors ?? {}); setErr(res.data.error ?? (Object.values(res.data.errors ?? {})[0] as string) ?? 'Could not save'); return; }
+    if (!res.ok) { setErrors(res.data.errors ?? {}); setErr(res.data.error ?? (Object.values(res.data.errors ?? {})[0] as string) ?? tr('Could not save')); return; }
     await onSaved();
   }
 
   return (
     <div className="space-y-3 py-1">
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Edit template · <span className="font-mono">{tpl.template_code ?? tpl.template_name}</span></div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{tr("Edit template ·")} <span className="font-mono">{tpl.template_code ?? tpl.template_name}</span></div>
       {tpl.status === 'CLARIFICATION_REQUIRED' && tpl.remarks && (
         <p className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-800">Reviewer remarks: {tpl.remarks}</p>
       )}
       <div className="grid gap-3 md:grid-cols-2">
-        <div><label className="label">Template name</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} />{errors.template_name && <p className="mt-1 text-xs text-rose-600">{errors.template_name}</p>}</div>
-        <div><label className="label">Category</label><select className="input" value={category} onChange={(e) => setCategory(e.target.value)}><option value="TRANSACTIONAL">Transactional</option><option value="OTP">OTP</option><option value="PROMOTIONAL">Promotional</option><option value="SERVICE">Service</option></select></div>
+        <div><label className="label">{tr("Template name")}</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} />{errors.template_name && <p className="mt-1 text-xs text-rose-600">{errors.template_name}</p>}</div>
+        <div><label className="label">{tr("Category")}</label><select className="input" value={category} onChange={(e) => setCategory(e.target.value)}><option value="TRANSACTIONAL">{tr("Transactional")}</option><option value="OTP">{tr("OTP")}</option><option value="PROMOTIONAL">{tr("Promotional")}</option><option value="SERVICE">{tr("Service")}</option></select></div>
       </div>
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="label mb-0">Template body</label>
-          <button type="button" className="btn-ghost btn-sm" onClick={addVariable}>+ Add variable</button>
+          <label className="label mb-0">{tr("Template body")}</label>
+          <button type="button" className="btn-ghost btn-sm" onClick={addVariable}>{tr("+ Add variable")}</button>
         </div>
         <textarea ref={bodyRef} className="input min-h-[90px]" value={body} onChange={(e) => setBody(e.target.value)} />
-        <p className="mt-1 text-xs text-slate-500">Declare placeholders as <span className="font-mono">&lt;var1&gt;</span>, <span className="font-mono">&lt;var2&gt;</span> …</p>
+        <p className="mt-1 text-xs text-slate-500">{tr("Declare placeholders as")} <span className="font-mono">&lt;var1&gt;</span>, <span className="font-mono">&lt;var2&gt;</span> …</p>
         {errors.body && <p className="mt-1 text-xs text-rose-600">{errors.body}</p>}
       </div>
       {declared.length > 0 && (
         <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
-          <span className="text-sm font-semibold text-slate-700">Sample content</span>
+          <span className="text-sm font-semibold text-slate-700">{tr("Sample content")}</span>
           <div className="mt-2 grid gap-3 md:grid-cols-2">
             {declared.map((v) => (
               <div key={v}>
@@ -234,7 +235,7 @@ function TemplateEditor({ tpl, onSaved }: { tpl: Tpl; onSaved: () => void | Prom
       )}
       {body.trim() && (
         <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">SMS preview</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">{tr("SMS preview")}</span>
           <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{preview}</p>
         </div>
       )}

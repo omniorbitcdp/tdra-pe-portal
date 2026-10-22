@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { RegisterForm } from '@/components/RegisterForm';
 import { AuthBrandPanel, AuthMobileBrand, COPYRIGHT, type Brand } from '@/components/AuthPanel';
 import { getSettings } from '@/lib/settings';
+import { getLang } from '@/lib/i18n/server';
+import { translate } from '@/lib/i18n';
+import { LangToggle } from '@/components/LangToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,25 +15,31 @@ export default async function RegisterPage() {
     brand = { name: s.operatorName, short: s.operatorShortName, logo: s.logoDataUrl ?? null };
   } catch { /* fall back to defaults */ }
 
+  const lang = await getLang();
+  const t = (k: string) => translate(lang, k);
+
   return (
     <div className="grid min-h-screen bg-white lg:grid-cols-[1.15fr_1fr]">
       <AuthBrandPanel brand={brand} />
 
       <main className="flex flex-col justify-center px-6 py-12 sm:px-10">
         <div className="mx-auto w-full max-w-md">
-          <AuthMobileBrand brand={brand} />
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <AuthMobileBrand brand={brand} />
+            <LangToggle className="ml-auto" />
+          </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-            <p className="text-sm font-semibold text-blue-700">New Business Registration</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Register your business</h1>
+            <p className="text-sm font-semibold text-blue-700">{t('New Business Registration')}</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{t('Register your business')}</h1>
             <p className="mt-1.5 text-sm text-slate-500">
-              Step 1 of the registration process. Your e-mail and password are all you need — you can sign in immediately after registering.
+              {t('Step 1 of the registration process. Your e-mail and password are all you need — you can sign in immediately after registering.')}
             </p>
 
             <RegisterForm />
 
             <div className="mt-6 border-t border-slate-100 pt-4 text-center text-xs text-slate-500">
-              Already registered? <Link className="font-semibold text-blue-700 hover:underline" href="/login">Sign in</Link>
+              {t('Already registered?')} <Link className="font-semibold text-blue-700 hover:underline" href="/login">{t('Sign in')}</Link>
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
 import { api, apiForm } from '@/lib/client';
 import { PageHeader, Card, StatusPill } from '@/components/ui';
@@ -40,7 +41,7 @@ export default function KycPage() {
     const fd = new FormData(); fd.append('doc_type', docType); fd.append('file', file);
     const res = await apiForm('/api/pe/kyc', fd);
     setBusy('');
-    if (!res.ok) { setError(res.data.error ?? 'Upload failed'); return; }
+    if (!res.ok) { setError(res.data.error ?? tr('Upload failed')); return; }
     setNotice(`${DOC_TYPE_LABELS[docType as keyof typeof DOC_TYPE_LABELS]} uploaded.`);
     await load();
   }
@@ -60,7 +61,7 @@ export default function KycPage() {
       setError([d.error, d.missingDocuments?.length ? `Missing documents: ${d.missingDocuments.join(', ')}` : '', d.missingFields?.length ? `Missing fields: ${d.missingFields.join(', ')}` : ''].filter(Boolean).join(' · '));
       return;
     }
-    setNotice('KYC pack submitted for review.');
+    setNotice(tr('KYC pack submitted for review.'));
     await load();
   }
 
@@ -75,25 +76,25 @@ export default function KycPage() {
 
   return (
     <div>
-      <PageHeader title="TDRA KYC Documents" subtitle="Section 5 — all four documents are mandatory for the TDRA pack" />
+      <PageHeader title={tr("TDRA KYC Documents")} subtitle={tr("Section 5 — all four documents are mandatory for the TDRA pack")} />
       <ErrorBox message={error} /><Notice message={notice} />
 
       <Card className="mb-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-bold uppercase tracking-wide text-slate-500">KYC submission status</div>
+            <div className="text-sm font-bold uppercase tracking-wide text-slate-500">{tr("KYC submission status")}</div>
             <div className="mt-1 flex flex-wrap items-center gap-3"><StatusPill status={st} /><span className="text-sm text-slate-600">{uploadedTypes.length} of 4 documents uploaded</span><span className="font-mono text-xs text-slate-500">PE ID {entity?.entity_code ?? "—"}</span></div>
           </div>
           {canSubmit && <button className="btn-primary" disabled={submitting} onClick={submitKyc}>{submitting ? 'Submitting…' : st === 'DRAFT' ? 'Submit KYC for review' : 'Resubmit KYC for review'}</button>}
-          {!canSubmit && ['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED'].includes(st) && <span className="pill bg-sky-100 text-sky-700">Awaiting operator review</span>}
-          {st === 'APPROVED' && <span className="pill bg-emerald-100 text-emerald-700">KYC approved</span>}
+          {!canSubmit && ['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED'].includes(st) && <span className="pill bg-sky-100 text-sky-700">{tr("Awaiting operator review")}</span>}
+          {st === 'APPROVED' && <span className="pill bg-emerald-100 text-emerald-700">{tr("KYC approved")}</span>}
         </div>
         {!ready && (
           <div className="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-800">
-            <div className="font-semibold">Before you can submit:</div>
+            <div className="font-semibold">{tr("Before you can submit:")}</div>
             <ul className="mt-1 list-inside list-disc">
               {missingTypes.length > 0 && <li>Upload: {missingTypes.map((t) => DOC_TYPE_LABELS[t]).join(', ')}</li>}
-              {missingFields.length > 0 && <li>Complete in <a className="font-semibold underline" href="/pe/profile">Entity &amp; Signatory</a>: {missingFields.join(', ')}</li>}
+              {missingFields.length > 0 && <li>{tr("Complete in")} <a className="font-semibold underline" href="/pe/profile">{tr("Entity &amp; Signatory")}</a>: {missingFields.join(', ')}</li>}
             </ul>
           </div>
         )}
@@ -119,7 +120,7 @@ export default function KycPage() {
                   <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(t, f); e.target.value = ''; }} />
                 </label>
-                {d && <button type="button" className="btn-ghost" onClick={() => view(d.id)}>Preview</button>}
+                {d && <button type="button" className="btn-ghost" onClick={() => view(d.id)}>{tr("Preview")}</button>}
               </div>
             </Card>
           );

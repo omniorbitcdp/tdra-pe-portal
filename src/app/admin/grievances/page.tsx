@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid } from '@/components/ui';
@@ -79,7 +80,7 @@ export default function AdminGrievancesPage() {
     setBusyId(id); setError(''); setNotice('');
     const res = await api('/api/admin/grievances', { method: 'POST', body: JSON.stringify({ id, action, remarks }) });
     setBusyId('');
-    if (!res.ok) { setError(res.data.error ?? 'Could not update the grievance'); return; }
+    if (!res.ok) { setError(res.data.error ?? tr('Could not update the grievance')); return; }
     setNotice(`Grievance ${PAST[action] ?? action.toLowerCase()}.`);
     setOpenId('');
     await load();
@@ -88,15 +89,15 @@ export default function AdminGrievancesPage() {
   if (!loaded) return <Loader />;
   return (
     <div>
-      <PageHeader title="Grievance Oversight"
+      <PageHeader title={tr("Grievance Oversight")}
         subtitle={`Every subscriber grievance across the platform (${summary.total} in total), including ones no registered header could be matched to.`} />
       <ErrorBox message={error} /><Notice message={notice} />
 
       <StatGrid cols={4}>
-        <StatCard label="Open with enterprise" value={summary.open} tone="amber" />
-        <StatCard label="Escalated to you" value={summary.escalated} tone="sky" hint="Awaiting a ruling" />
-        <StatCard label="SLA lapsed" value={summary.overdue} tone="rose" />
-        <StatCard label="Unmatched" value={summary.unmatched} hint="No registered header" />
+        <StatCard label={tr("Open with enterprise")} value={summary.open} tone="amber" />
+        <StatCard label={tr("Escalated to you")} value={summary.escalated} tone="sky" hint={tr("Awaiting a ruling")} />
+        <StatCard label={tr("SLA lapsed")} value={summary.overdue} tone="rose" />
+        <StatCard label={tr("Unmatched")} value={summary.unmatched} hint={tr("No registered header")} />
       </StatGrid>
 
       <Card className="mt-5 overflow-hidden p-0">
@@ -107,14 +108,14 @@ export default function AdminGrievancesPage() {
               {label} ({count[k]})
             </button>
           ))}
-          <button className="ml-auto text-xs font-semibold text-blue-700 hover:underline" onClick={() => void load()}>Refresh</button>
+          <button className="ml-auto text-xs font-semibold text-blue-700 hover:underline" onClick={() => void load()}>{tr("Refresh")}</button>
         </div>
         <div className="overflow-x-auto">
-          {filtered.length === 0 ? <div className="p-5"><Empty>No grievances in this view.</Empty></div> : (
+          {filtered.length === 0 ? <div className="p-5"><Empty>{tr("No grievances in this view.")}</Empty></div> : (
             <table className="table">
               <thead className="thead-row"><tr>
-                <th className="th">Grievance</th><th className="th">Header</th><th className="th">Enterprise</th>
-                <th className="th">Status</th><th className="th">Raised</th><th className="th">SLA</th><th className="th"></th>
+                <th className="th">{tr("Grievance")}</th><th className="th">{tr("Header")}</th><th className="th">{tr("Enterprise")}</th>
+                <th className="th">{tr("Status")}</th><th className="th">{tr("Raised")}</th><th className="th">{tr("SLA")}</th><th className="th"></th>
               </tr></thead>
               <tbody>
                 {filtered.map((g) => (
@@ -122,12 +123,12 @@ export default function AdminGrievancesPage() {
                     <tr className="tr">
                       <td className="td whitespace-nowrap font-mono text-xs">{g.grievance_code}</td>
                       <td className="td font-medium">{g.reported_header}</td>
-                      <td className="td text-xs">{g.enterprise ?? <span className="text-amber-700">Unmatched</span>}</td>
-                      <td className="td"><StatusPill status={g.status} label={GRIEVANCE_STATUS_LABELS[g.status] ?? g.status} /></td>
+                      <td className="td text-xs">{g.enterprise ?? <span className="text-amber-700">{tr("Unmatched")}</span>}</td>
+                      <td className="td"><StatusPill status={g.status} label={tr(GRIEVANCE_STATUS_LABELS[g.status] ?? g.status)} /></td>
                       <td className="td whitespace-nowrap text-xs text-slate-500">{new Date(g.created_at).toLocaleDateString()}</td>
                       <td className="td whitespace-nowrap text-xs">
                         {GRIEVANCE_OPEN.includes(g.status)
-                          ? (g.overdue ? <span className="font-semibold text-rose-600">Lapsed</span> : <span className="text-slate-600">{g.hours_remaining}h left</span>)
+                          ? (g.overdue ? <span className="font-semibold text-rose-600">{tr("Lapsed")}</span> : <span className="text-slate-600">{g.hours_remaining}h left</span>)
                           : <span className="text-slate-400">—</span>}
                       </td>
                       <td className="td">
@@ -217,20 +218,20 @@ function Detail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: GrievanceA
       ) : (
         <div className="space-y-2 border-t border-slate-200 pt-3">
           <div>
-            <label className="label">Note (required, min 5 characters)</label>
+            <label className="label">{tr("Note (required, min 5 characters)")}</label>
             <input className={`input ${tooShort ? 'border-rose-300 ring-1 ring-rose-200' : ''}`}
               value={remarks}
-              placeholder="Reason for returning, or the ruling you are recording"
+              placeholder={tr("Reason for returning, or the ruling you are recording")}
               onChange={(e) => { setRemarks(e.target.value); setTouched(false); }} />
-            {tooShort && <p className="mt-1 text-xs text-rose-600">Add a short note before you continue.</p>}
+            {tooShort && <p className="mt-1 text-xs text-rose-600">{tr("Add a short note before you continue.")}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {actions.map((a) => (
               <button key={a} className={BTN[a]} disabled={busy} onClick={() => run(a)}>
-                {GRIEVANCE_ACTION_LABELS[a]}
+                {tr(GRIEVANCE_ACTION_LABELS[a])}
               </button>
             ))}
-            {busy && <span className="text-xs text-slate-500">Saving…</span>}
+            {busy && <span className="text-xs text-slate-500">{tr("Saving…")}</span>}
           </div>
           <p className="text-[11px] text-slate-500">
             Returning the case sends it back to the enterprise with your note and restarts its SLA clock.

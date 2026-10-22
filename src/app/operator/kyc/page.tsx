@@ -2,7 +2,9 @@ import { redirect } from 'next/navigation';
 import { getSession, guard } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid, Avatar } from '@/components/ui';
-import { MANDATORY_DOC_TYPES } from '@/lib/constants';
+import { MANDATORY_DOC_TYPES, REG_STATUS_LABELS } from '@/lib/constants';
+import { getLang } from '@/lib/i18n/server';
+import { translate } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +12,9 @@ export default async function KycQueue() {
   const session = await getSession();
   if (!session) redirect('/login');
   if (guard(session, ['OPERATOR_KYC', 'ADMIN'])) redirect('/operator?denied=1');
+
+  const lang = await getLang();
+  const t = (k: string, v?: Record<string, string | number>) => translate(lang, k, v);
 
   const client = db();
   const [{ data: entities }, { data: docs }, { data: lastDecisions }] = await Promise.all([
@@ -37,29 +42,30 @@ export default async function KycQueue() {
 
   return (
     <div>
-      <PageHeader title="KYC Approval Queue" subtitle="Verify each of the four mandatory documents, then approve the PE information and the KYC pack." />
+      <PageHeader title={t('KYC Approval Queue')}
+        subtitle={t('Verify each of the four mandatory documents, then approve the PE information and the KYC pack.')} />
       <StatGrid cols={5}>
-        <StatCard label="Awaiting my action" value={awaiting} tone="amber" />
-        <StatCard label="Awaiting PE" value={awaitingPe} tone="sky" />
-        <StatCard label="Approved" value={approved} tone="emerald" />
-        <StatCard label="Rejected" value={rejected} tone="rose" />
-        <StatCard label="Not submitted yet" value={notSubmitted} hint="PE has not pressed Submit KYC" />
+        <StatCard label={t('Awaiting my action')} value={awaiting} tone="amber" />
+        <StatCard label={t('Awaiting PE')} value={awaitingPe} tone="sky" />
+        <StatCard label={t('Approved')} value={approved} tone="emerald" />
+        <StatCard label={t('Rejected')} value={rejected} tone="rose" />
+        <StatCard label={t('Not submitted yet')} value={notSubmitted} hint={t('PE has not pressed Submit KYC')} />
       </StatGrid>
 
       <Card className="mt-5 overflow-hidden p-0">
         <div className="overflow-x-auto">
-          {list.length === 0 ? <div className="p-5"><Empty>No entities registered yet.</Empty></div> : (
+          {list.length === 0 ? <div className="p-5"><Empty>{t('No entities registered yet.')}</Empty></div> : (
             <table className="table">
               <thead className="thead-row"><tr>
-                <th className="th">PE ID</th><th className="th">Entity</th><th className="th">Signatory</th>
-                <th className="th">KYC status</th><th className="th">Documents</th><th className="th">PE info</th>
-                <th className="th">Last action by</th><th className="th"></th>
+                <th className="th">{t('PE ID')}</th><th className="th">{t('Entity')}</th><th className="th">{t('Signatory')}</th>
+                <th className="th">{t('KYC status')}</th><th className="th">{t('Documents')}</th><th className="th">{t('PE info')}</th>
+                <th className="th">{t('Last action by')}</th><th className="th"></th>
               </tr></thead>
               <tbody>
                 {list.map((e) => {
                   const list2 = byEntity.get(e.id) ?? [];
                   const verified = list2.filter((d) => d.status === 'VERIFIED').length;
-                  const missing = MANDATORY_DOC_TYPES.filter((t) => !list2.some((d) => d.doc_type === t));
+                  const missing = MANDATORY_DOC_TYPES.filter((ty) => !list2.some((d) => d.doc_type === ty));
                   const last = lastBy.get(e.id);
                   return (
                     <tr key={e.id} className="tr">
@@ -69,12 +75,17 @@ export default async function KycQueue() {
                         <div className="text-xs text-slate-400">{e.entity_type}</div>
                       </td>
                       <td className="td text-xs">{e.signatory_name ?? '—'}</td>
-                      <td className="td"><StatusPill status={e.kyc_status} /></td>
-                      <td className="td text-xs">
-                        <span className={verified === 4 ? 'text-emerald-600' : 'text-slate-600'}>{verified}/4 verified</span>
-                        {missing.length > 0 && <div className="text-[11px] text-amber-700">{missing.length} missing</div>}
+                      <td className="td">
+                        <StatusPill status={e.kyc_status}
+                          label={t(REG_STATUS_LABELS[e.kyc_status as keyof typeof REG_STATUS_LABELS] ?? e.kyc_status)} />
                       </td>
-                      <td className="td text-xs">{e.kyc_info_approved ? <span className="font-semibold text-emerald-600">Approved</span> : <span className="text-slate-400">Not approved</span>}</td>
+                      <td className="td text-xs">
+                        <span className={verified === 4 ? 'text-emerald-600' : 'text-slate-600'}>{t('{n}/4 verified', { n: verified })}</span>
+                        {missing.length > 0 && <div className="text-[11px] text-amber-700">{t('{n} missing', { n: missing.length })}</div>}
+                      </td>
+                      <td className="td text-xs">{e.kyc_info_approved
+                        ? <span className="font-semibold text-emerald-600">{t('Approved')}</span>
+                        : <span className="text-slate-400">{t('Not approved')}</span>}</td>
                       <td className="td">
                         {last ? (
                           <span className="flex items-center gap-2">
@@ -86,7 +97,7 @@ export default async function KycQueue() {
                           </span>
                         ) : <span className="text-xs text-slate-400">—</span>}
                       </td>
-                      <td className="td"><a className="btn-primary btn-sm" href={`/operator/kyc/${e.id}`}>Review</a></td>
+                      <td className="td"><a className="btn-primary btn-sm" href={`/operator/kyc/${e.id}`}>{t('Review')}</a></td>
                     </tr>
                   );
                 })}

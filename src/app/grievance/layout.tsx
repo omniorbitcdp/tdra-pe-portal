@@ -1,14 +1,18 @@
 import Link from 'next/link';
 import { getSettings } from '@/lib/settings';
+import { getLang } from '@/lib/i18n/server';
+import { translate } from '@/lib/i18n';
+import { LangToggle } from '@/components/LangToggle';
 
 export const dynamic = 'force-dynamic';
 
 export default async function GrievanceLayout({ children }: { children: React.ReactNode }) {
-  const s = await getSettings();
+  const [s, lang] = await Promise.all([getSettings(), getLang()]);
+  const t = (k: string) => translate(lang, k);
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
           <Link href="/grievance" className="flex items-center gap-3">
             {s.logoDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -20,10 +24,11 @@ export default async function GrievanceLayout({ children }: { children: React.Re
             )}
             <span className="text-sm font-bold text-slate-800">{s.operatorName}</span>
           </Link>
-          <nav className="flex items-center gap-1 text-xs font-semibold">
-            <Link href="/grievance" className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Raise a grievance</Link>
-            <Link href="/grievance/track" className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Track</Link>
-            <Link href="/login" className="rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700">Enterprise / Telco login</Link>
+          <nav className="flex flex-wrap items-center gap-1 text-xs font-semibold">
+            <Link href="/grievance" className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">{t('Raise a grievance')}</Link>
+            <Link href="/grievance/track" className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">{t('Track')}</Link>
+            <Link href="/login" className="rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700">{t('Enterprise / Telco login')}</Link>
+            <LangToggle className="ms-1" />
           </nav>
         </div>
       </header>

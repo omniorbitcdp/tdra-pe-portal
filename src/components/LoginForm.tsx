@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -33,7 +34,7 @@ export function LoginForm() {
       method: 'POST', body: JSON.stringify({ email, password, portal }),
     });
     setBusy(false);
-    if (!res.ok) { setError(res.data.error ?? 'Sign in failed'); return; }
+    if (!res.ok) { setError(res.data.error ?? tr('Sign in failed')); return; }
     router.push(params.get('next') || res.data.redirect || '/');
     router.refresh();
   }
@@ -52,24 +53,24 @@ export function LoginForm() {
               portal === p.key ? 'bg-white text-blue-700 shadow-sm ring-1 ring-blue-100' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            {p.label}
+            {tr(p.label)}
           </button>
         ))}
       </div>
-      <p className="text-[11px] leading-relaxed text-slate-500">{active.hint}</p>
+      <p className="text-[11px] leading-relaxed text-slate-500">{tr(active.hint)}</p>
 
       {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
       <div>
-        <label className="label" htmlFor="email">E-mail address</label>
-        <input id="email" type="email" className="input" placeholder="Enter your e-mail address"
+        <label className="label" htmlFor="email">{tr("E-mail address")}</label>
+        <input id="email" type="email" className="input" placeholder={tr("Enter your e-mail address")}
           value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
       </div>
 
       <div>
-        <label className="label" htmlFor="password">Password</label>
+        <label className="label" htmlFor="password">{tr("Password")}</label>
         <div className="relative">
-          <input id="password" type={showPw ? 'text' : 'password'} className="input pr-16" placeholder="Enter your password"
+          <input id="password" type={showPw ? 'text' : 'password'} className="input pr-16" placeholder={tr("Enter your password")}
             value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
           <button type="button" onClick={() => setShowPw(!showPw)}
             className="absolute inset-y-0 right-2 my-auto h-7 rounded-md px-2 text-[11px] font-semibold text-slate-500 hover:bg-slate-100">
@@ -79,7 +80,7 @@ export function LoginForm() {
       </div>
 
       <div className="text-right">
-        <Link className="text-xs text-slate-500 hover:text-slate-700" href="/forgot">Forgot password?</Link>
+        <Link className="text-xs text-slate-500 hover:text-slate-700" href="/forgot">{tr("Forgot password?")}</Link>
       </div>
 
       <button className="btn-primary w-full" disabled={busy}>

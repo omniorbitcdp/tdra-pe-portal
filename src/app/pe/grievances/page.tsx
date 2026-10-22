@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid } from '@/components/ui';
@@ -88,7 +89,7 @@ export default function PeGrievancesPage() {
     setBusyId(id); setError(''); setNotice('');
     const res = await api('/api/pe/grievances', { method: 'POST', body: JSON.stringify({ id, action, remarks }) });
     setBusyId('');
-    if (!res.ok) { setError(res.data.error ?? 'Could not update the grievance'); return; }
+    if (!res.ok) { setError(res.data.error ?? tr('Could not update the grievance')); return; }
     setNotice(`Grievance ${PAST[action] ?? action.toLowerCase()}.`);
     setOpenId('');
     await load();
@@ -97,14 +98,14 @@ export default function PeGrievancesPage() {
   if (!loaded) return <Loader />;
   return (
     <div>
-      <PageHeader title="Subscriber Grievances" subtitle="Reports matched to your headers. Respond within the SLA shown; escalate to the platform administrator when you need a ruling." />
+      <PageHeader title={tr("Subscriber Grievances")} subtitle={tr("Reports matched to your headers. Respond within the SLA shown; escalate to the platform administrator when you need a ruling.")} />
       <ErrorBox message={error} /><Notice message={notice} />
 
       <StatGrid cols={4}>
-        <StatCard label="Open" value={summary.open} tone="amber" hint="Awaiting your action" />
-        <StatCard label="With telco" value={summary.escalated} tone="sky" hint="Escalated for review" />
-        <StatCard label="SLA lapsed" value={summary.overdue} tone="rose" />
-        <StatCard label="Total received" value={summary.total} />
+        <StatCard label={tr("Open")} value={summary.open} tone="amber" hint={tr("Awaiting your action")} />
+        <StatCard label={tr("With telco")} value={summary.escalated} tone="sky" hint={tr("Escalated for review")} />
+        <StatCard label={tr("SLA lapsed")} value={summary.overdue} tone="rose" />
+        <StatCard label={tr("Total received")} value={summary.total} />
       </StatGrid>
 
       <Card className="mt-5 overflow-hidden p-0">
@@ -115,14 +116,14 @@ export default function PeGrievancesPage() {
               {label} ({count[k]})
             </button>
           ))}
-          <button className="ml-auto text-xs font-semibold text-blue-700 hover:underline" onClick={() => void load()}>Refresh</button>
+          <button className="ml-auto text-xs font-semibold text-blue-700 hover:underline" onClick={() => void load()}>{tr("Refresh")}</button>
         </div>
         <div className="overflow-x-auto">
-          {filtered.length === 0 ? <div className="p-5"><Empty>No grievances in this view.</Empty></div> : (
+          {filtered.length === 0 ? <div className="p-5"><Empty>{tr("No grievances in this view.")}</Empty></div> : (
             <table className="table">
               <thead className="thead-row"><tr>
-                <th className="th">Grievance</th><th className="th">Reported header</th><th className="th">Type</th>
-                <th className="th">Received</th><th className="th">SLA</th><th className="th">Status</th><th className="th"></th>
+                <th className="th">{tr("Grievance")}</th><th className="th">{tr("Reported header")}</th><th className="th">{tr("Type")}</th>
+                <th className="th">{tr("Received")}</th><th className="th">{tr("SLA")}</th><th className="th">{tr("Status")}</th><th className="th"></th>
               </tr></thead>
               <tbody>
                 {filtered.map((g) => (
@@ -136,10 +137,10 @@ export default function PeGrievancesPage() {
                         {GRIEVANCE_CONCLUDED.includes(g.status) || g.status === 'ESCALATED'
                           ? <span className="text-slate-400">—</span>
                           : g.overdue
-                            ? <span className="font-semibold text-rose-600">Lapsed</span>
+                            ? <span className="font-semibold text-rose-600">{tr("Lapsed")}</span>
                             : <span className="text-slate-600">{g.hours_remaining}h left</span>}
                       </td>
-                      <td className="td"><StatusPill status={g.status} label={GRIEVANCE_STATUS_LABELS[g.status] ?? g.status} /></td>
+                      <td className="td"><StatusPill status={g.status} label={tr(GRIEVANCE_STATUS_LABELS[g.status] ?? g.status)} /></td>
                       <td className="td">
                         <button className="btn-ghost btn-sm" onClick={() => setOpenId(openId === g.id ? '' : g.id)}>
                           {openId === g.id ? 'Hide' : 'Open'}
@@ -181,30 +182,30 @@ function GrievanceDetail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: G
     <div className="space-y-4 py-1">
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Message reported</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Message reported")}</div>
           <p className="mt-1 whitespace-pre-wrap rounded border border-slate-200 bg-white p-3 text-sm text-slate-800">{g.message_content}</p>
         </div>
         <div className="space-y-3">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Reporter</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Reporter")}</div>
             <p className="text-sm text-slate-800">{g.subscriber_name ?? 'Anonymous'} · {g.reporter}</p>
           </div>
-          {g.highlighted_url && <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Suspicious URL</div><p className="break-all text-sm text-rose-700">{g.highlighted_url}</p></div>}
-          {g.highlighted_phone && <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone highlighted</div><p className="text-sm text-slate-800">{g.highlighted_phone}</p></div>}
+          {g.highlighted_url && <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Suspicious URL")}</div><p className="break-all text-sm text-rose-700">{g.highlighted_url}</p></div>}
+          {g.highlighted_phone && <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Phone highlighted")}</div><p className="text-sm text-slate-800">{g.highlighted_phone}</p></div>}
           {g.attachment_path && (
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Screenshot</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Screenshot")}</div>
               <a className="text-sm font-semibold text-blue-700 hover:underline" target="_blank" rel="noreferrer"
                 href={`/api/grievances/attachment?id=${g.id}`}>{g.attachment_name ?? 'Open screenshot'}</a>
             </div>
           )}
-          <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Matched by</div><p className="text-xs text-slate-600">{g.match_method.replace(/_/g, ' ').toLowerCase()}</p></div>
+          <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tr("Matched by")}</div><p className="text-xs text-slate-600">{g.match_method.replace(/_/g, ' ').toLowerCase()}</p></div>
         </div>
       </div>
 
       {g.escalated_at && (
         <div className="rounded border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
-          <strong>Escalated to the platform administrator</strong>
+          <strong>{tr("Escalated to the platform administrator")}</strong>
           {g.escalated_by_role ? <> by {g.escalated_by_role.replace(/_/g, ' ').toLowerCase()}</> : null}
           {' '}on {new Date(g.escalated_at).toLocaleString()}.
           {g.escalation_reason && <span className="mt-1 block text-indigo-800">Reason: {g.escalation_reason}</span>}
@@ -213,7 +214,7 @@ function GrievanceDetail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: G
 
       {g.return_reason && (
         <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          <strong>Returned to you for justification</strong>
+          <strong>{tr("Returned to you for justification")}</strong>
           {g.returned_at ? <> on {new Date(g.returned_at).toLocaleString()}</> : null}.
           <span className="mt-1 block text-amber-800">Administrator note: {g.return_reason}</span>
         </div>
@@ -240,20 +241,20 @@ function GrievanceDetail({ g, busy, onAct }: { g: G; busy: boolean; onAct: (a: G
       ) : (
         <div className="space-y-2 border-t border-slate-200 pt-3">
           <div>
-            <label className="label">Note for the record {needsNote && <span className="text-rose-600">(required, min 5 characters)</span>}</label>
+            <label className="label">Note for the record {needsNote && <span className="text-rose-600">{tr("(required, min 5 characters)")}</span>}</label>
             <input className={`input ${tooShort ? 'border-rose-300 ring-1 ring-rose-200' : ''}`}
-              placeholder="What did you find, and what did you do?"
+              placeholder={tr("What did you find, and what did you do?")}
               value={remarks}
               onChange={(e) => { setRemarks(e.target.value); setTouched(false); }} />
-            {tooShort && <p className="mt-1 text-xs text-rose-600">Add a short note before you continue.</p>}
+            {tooShort && <p className="mt-1 text-xs text-rose-600">{tr("Add a short note before you continue.")}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {actions.map((a) => (
               <button key={a} className={BTN[a]} disabled={busy} onClick={() => run(a)}>
-                {GRIEVANCE_ACTION_LABELS[a]}
+                {tr(GRIEVANCE_ACTION_LABELS[a])}
               </button>
             ))}
-            {busy && <span className="text-xs text-slate-500">Saving…</span>}
+            {busy && <span className="text-xs text-slate-500">{tr("Saving…")}</span>}
           </div>
           {actions.includes('ESCALATE') && (
             <p className="text-[11px] text-slate-500">

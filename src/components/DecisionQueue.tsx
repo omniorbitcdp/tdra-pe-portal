@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty, StatCard, StatGrid, Toolbar } from '@/components/ui';
@@ -86,16 +87,16 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
 
   return (
     <div>
-      <PageHeader title={title} subtitle="Approve, reject or return a request for correction. Remarks are mandatory for rejection and correction." />
+      <PageHeader title={title} subtitle={tr("Approve, reject or return a request for correction. Remarks are mandatory for rejection and correction.")} />
       <ErrorBox message={error} /><Notice message={notice} />
 
       {summary && (
         <StatGrid cols={5}>
-          <StatCard label="Awaiting my action" value={summary.pending} tone="amber" href="#" />
-          <StatCard label="Awaiting PE" value={summary.awaitingPe} tone="sky" />
-          <StatCard label="Approved" value={summary.approved} tone="emerald" />
-          <StatCard label="Rejected" value={summary.rejected} tone="rose" />
-          <StatCard label="Total requests" value={summary.total} />
+          <StatCard label={tr("Awaiting my action")} value={summary.pending} tone="amber" href="#" />
+          <StatCard label={tr("Awaiting PE")} value={summary.awaitingPe} tone="sky" />
+          <StatCard label={tr("Approved")} value={summary.approved} tone="emerald" />
+          <StatCard label={tr("Rejected")} value={summary.rejected} tone="rose" />
+          <StatCard label={tr("Total requests")} value={summary.total} />
         </StatGrid>
       )}
 
@@ -108,15 +109,15 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
                 {v.label}
               </button>
             ))}
-            <input className="input ml-auto max-w-xs" placeholder="Search entity, ID, status…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input className="input ml-auto max-w-xs" placeholder={tr("Search entity, ID, status…")} value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </Toolbar>
         <div className="overflow-x-auto">
-          {filtered.length === 0 ? <div className="px-5 pb-5"><Empty>Nothing in this view.</Empty></div> : (
+          {filtered.length === 0 ? <div className="px-5 pb-5"><Empty>{tr("Nothing in this view.")}</Empty></div> : (
             <table className="table">
               <thead className="thead-row"><tr>
-                <th className="th">ID</th><th className="th">Entity</th><th className="th">Request</th>
-                <th className="th">Status</th><th className="th">Last remarks</th><th className="th">Decision</th>
+                <th className="th">ID</th><th className="th">{tr("Entity")}</th><th className="th">{tr("Request")}</th>
+                <th className="th">{tr("Status")}</th><th className="th">{tr("Last remarks")}</th><th className="th">{tr("Decision")}</th>
               </tr></thead>
               <tbody>
                 {filtered.map((r) => (
@@ -130,12 +131,12 @@ export function DecisionQueue({ module, title }: { module: 'HEADER' | 'TEMPLATE'
                     <td className="td">
                       {actionable(r.status) ? (
                         <div className="flex flex-wrap items-center gap-2">
-                          <input className="input max-w-[190px]" placeholder="Remarks…" value={remarks[r.id] ?? ''} onChange={(e) => setRemarks({ ...remarks, [r.id]: e.target.value })} />
-                          <button className="btn-success btn-sm" disabled={busyId === r.id} onClick={() => decide(r.id, 'APPROVE')}>Approve</button>
-                          <button className="btn-ghost btn-sm" disabled={busyId === r.id} onClick={() => decide(r.id, 'REQUEST_CORRECTION')}>Correction</button>
-                          <button className="btn-danger btn-sm" disabled={busyId === r.id} onClick={() => decide(r.id, 'REJECT')}>Reject</button>
+                          <input className="input max-w-[190px]" placeholder={tr("Remarks…")} value={remarks[r.id] ?? ''} onChange={(e) => setRemarks({ ...remarks, [r.id]: e.target.value })} />
+                          <button className="btn-success btn-sm" disabled={busyId === r.id} onClick={() => decide(r.id, 'APPROVE')}>{tr("Approve")}</button>
+                          <button className="btn-ghost btn-sm" disabled={busyId === r.id} onClick={() => decide(r.id, 'REQUEST_CORRECTION')}>{tr("Correction")}</button>
+                          <button className="btn-danger btn-sm" disabled={busyId === r.id} onClick={() => decide(r.id, 'REJECT')}>{tr("Reject")}</button>
                         </div>
-                      ) : <span className="text-xs text-slate-400">No action available</span>}
+                      ) : <span className="text-xs text-slate-400">{tr("No action available")}</span>}
                     </td>
                   </tr>
                   {module === 'TEMPLATE' && open[r.id] && (
@@ -162,7 +163,7 @@ function TemplatePreview({ body, samples }: { body: string; samples: Record<stri
   const vars = extractVariables(body);
   return (
     <div className="space-y-3 py-1">
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">SMS template body</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{tr("SMS template body")}</div>
       <p className="whitespace-pre-wrap text-sm text-slate-800">
         {tokenise(body).map((p, i) => p.isVar
           ? <span key={i} className="rounded bg-blue-50 px-1 font-mono text-xs text-blue-700 ring-1 ring-blue-200">{p.text}</span>
@@ -171,14 +172,14 @@ function TemplatePreview({ body, samples }: { body: string; samples: Record<stri
 
       {vars.length > 0 && (
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Variables &amp; sample content</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{tr("Variables &amp; sample content")}</div>
           <table className="mt-1 w-full max-w-xl">
-            <thead><tr><th className="th">Variable</th><th className="th">Sample content</th></tr></thead>
+            <thead><tr><th className="th">{tr("Variable")}</th><th className="th">{tr("Sample content")}</th></tr></thead>
             <tbody>
               {vars.map((v) => (
                 <tr key={v}>
                   <td className="td font-mono text-xs text-blue-700">&lt;{v}&gt;</td>
-                  <td className="td text-xs">{samples[v] ? samples[v] : <span className="text-rose-600">not provided</span>}</td>
+                  <td className="td text-xs">{samples[v] ? samples[v] : <span className="text-rose-600">{tr("not provided")}</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -187,7 +188,7 @@ function TemplatePreview({ body, samples }: { body: string; samples: Record<stri
       )}
 
       <div className="rounded border border-blue-100 bg-blue-50/50 p-3">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">As received by the subscriber</div>
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">{tr("As received by the subscriber")}</div>
         <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{renderWithSamples(body, samples)}</p>
       </div>
     </div>

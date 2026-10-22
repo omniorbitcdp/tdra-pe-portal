@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { Card, StatCard, StatGrid, SectionTitle, Empty, Avatar } from '@/components/ui';
@@ -22,7 +23,7 @@ export default function OperatorWorkbench() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Approval Workbench</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{tr("Approval Workbench")}</h1>
         <p className="mt-1 text-sm text-slate-500">{ROLE_LABELS[data.role]} — you can only see and action the queue{multi ? 's' : ''} assigned to your role.</p>
       </div>
       <Notice />
@@ -31,11 +32,11 @@ export default function OperatorWorkbench() {
         <div key={m.module} className="mb-7">
           {multi && <SectionTitle>{m.label} registrations</SectionTitle>}
           <StatGrid cols={5}>
-            <StatCard label="Awaiting my action" value={m.pending} tone="amber" href={m.href} active={m.pending > 0} />
-            <StatCard label="Awaiting PE" value={m.awaitingPe} tone="sky" />
-            <StatCard label="Approved" value={m.approved} tone="emerald" />
-            <StatCard label="Rejected" value={m.rejected} tone="rose" />
-            <StatCard label="Total" value={m.total} hint={m.draft ? `${m.draft} still in draft` : undefined} />
+            <StatCard label={tr("Awaiting my action")} value={m.pending} tone="amber" href={m.href} active={m.pending > 0} />
+            <StatCard label={tr("Awaiting PE")} value={m.awaitingPe} tone="sky" />
+            <StatCard label={tr("Approved")} value={m.approved} tone="emerald" />
+            <StatCard label={tr("Rejected")} value={m.rejected} tone="rose" />
+            <StatCard label={tr("Total")} value={m.total} hint={m.draft ? `${m.draft} still in draft` : undefined} />
           </StatGrid>
           <div className="mt-3 flex flex-wrap gap-2">
             <a className="btn-primary" href={m.href}>Open {m.label} queue{m.pending > 0 ? ` · ${m.pending} pending` : ''}</a>
@@ -43,21 +44,21 @@ export default function OperatorWorkbench() {
         </div>
       ))}
 
-      <SectionTitle>My decisions</SectionTitle>
+      <SectionTitle>{tr("My decisions")}</SectionTitle>
       <StatGrid cols={4}>
-        <StatCard label="Approved by me" value={data.mine.approved} tone="emerald" />
-        <StatCard label="Rejected by me" value={data.mine.rejected} tone="rose" />
-        <StatCard label="Corrections requested" value={data.mine.correction} tone="amber" />
-        <StatCard label="Total actions" value={data.mine.total} />
+        <StatCard label={tr("Approved by me")} value={data.mine.approved} tone="emerald" />
+        <StatCard label={tr("Rejected by me")} value={data.mine.rejected} tone="rose" />
+        <StatCard label={tr("Corrections requested")} value={data.mine.correction} tone="amber" />
+        <StatCard label={tr("Total actions")} value={data.mine.total} />
       </StatGrid>
 
       <SectionTitle>Recent activity in my queue{multi ? 's' : ''}</SectionTitle>
       <Card className="overflow-hidden p-0">
-        {data.recent.length === 0 ? <div className="p-5"><Empty>No activity yet.</Empty></div> : (
+        {data.recent.length === 0 ? <div className="p-5"><Empty>{tr("No activity yet.")}</Empty></div> : (
           <table className="table">
             <thead className="thead-row"><tr>
-              <th className="th">When</th><th className="th">Module</th><th className="th">Action</th>
-              <th className="th">By</th><th className="th">Result</th><th className="th">Remarks</th>
+              <th className="th">{tr("When")}</th><th className="th">{tr("Module")}</th><th className="th">{tr("Action")}</th>
+              <th className="th">By</th><th className="th">{tr("Result")}</th><th className="th">{tr("Remarks")}</th>
             </tr></thead>
             <tbody>
               {data.recent.map((a) => (

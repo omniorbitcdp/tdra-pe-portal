@@ -1,4 +1,5 @@
 'use client';
+import { t as tr } from '@/lib/i18n/live';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/client';
 import { PageHeader, Card, StatusPill, Empty } from '@/components/ui';
@@ -16,13 +17,13 @@ export default function NotificationsPage() {
   if (!loaded) return <Loader />;
   return (
     <div>
-      <PageHeader title="Notification Log" subtitle="Event, channel, recipient, provider message id and delivery result" />
+      <PageHeader title={tr("Notification Log")} subtitle={tr("Event, channel, recipient, provider message id and delivery result")} />
       <ErrorBox message={error} />
-      <div className="mb-4"><select className="input max-w-[200px]" value={channel} onChange={(e) => setChannel(e.target.value)}><option value="">All channels</option>{['EMAIL', 'SMS', 'WHATSAPP'].map((c) => <option key={c}>{c}</option>)}</select></div>
+      <div className="mb-4"><select className="input max-w-[200px]" value={channel} onChange={(e) => setChannel(e.target.value)}><option value="">{tr("All channels")}</option>{['EMAIL', 'SMS', 'WHATSAPP'].map((c) => <option key={c}>{c}</option>)}</select></div>
       <Card className="overflow-x-auto">
-        {rows.length === 0 ? <Empty>No notifications logged.</Empty> : (
+        {rows.length === 0 ? <Empty>{tr("No notifications logged.")}</Empty> : (
           <table className="w-full">
-            <thead><tr><th className="th">When</th><th className="th">Event</th><th className="th">Channel</th><th className="th">Recipient</th><th className="th">Status</th><th className="th">HTTP</th><th className="th">Message ID</th><th className="th">Error</th></tr></thead>
+            <thead><tr><th className="th">{tr("When")}</th><th className="th">{tr("Event")}</th><th className="th">{tr("Channel")}</th><th className="th">{tr("Recipient")}</th><th className="th">{tr("Status")}</th><th className="th">{tr("HTTP")}</th><th className="th">{tr("Message ID")}</th><th className="th">{tr("Error")}</th></tr></thead>
             <tbody>{rows.map((r) => (
               <tr key={r.id}>
                 <td className="td whitespace-nowrap text-xs">{new Date(r.created_at).toLocaleString()}</td>

@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { NavGroup } from '@/lib/nav';
 import { Icon, type IconName } from './icons';
+import { useLang } from './LangProvider';
 
 export function TopNav({ groups, pending = {} }: { groups: NavGroup[]; pending?: Record<string, number> }) {
   const pathname = usePathname();
+  const { t } = useLang();
   const items = groups.flatMap((g) => g.items);
 
   const isActive = (href: string, exact?: boolean) =>
@@ -27,7 +29,7 @@ export function TopNav({ groups, pending = {} }: { groups: NavGroup[]; pending?:
               className={`-mb-px flex shrink-0 items-center gap-2 border-b-2 px-3.5 py-3 text-sm font-semibold transition ${
                 active ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:border-slate-200 hover:text-slate-700'}`}>
               <Icon name={it.icon as IconName} className="h-4 w-4" />
-              {it.label}
+              {t(it.label)}
               {count > 0 && (
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">{count}</span>
               )}
